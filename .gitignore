@@ -1,0 +1,48 @@
+# .gitignore for Minecraft ULTRAKILL Bridge
+# .NET
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.user
+*.suo
+*.csproj.user
+
+# Build outputs
+*.log
+*.class
+*.jar
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+.idea/
+*.ipr
+*.iws
+
+# Unity / BepInEx / game files (avoid committing large assets)
+*.unityproj
+*.unity
+*.prefab
+*.meta
+Library/
+Temp/
+Build/
+Builds/
+Assets/Plugins/
+BepInEx/
+Mods/
+
+# IDE/editor files
+.vscode/
+*.swp
+*~
+*.bak
+
+# Misc
+.DS_Store
+Thumbs.db
