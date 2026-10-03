@@ -33,12 +33,13 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: Compile Java protocol sources and test harness
+      - name: Compile Java sources and test harness
         run: |
           mkdir -p tools/cross_lang_test/classes
-          javac -d tools/cross_lang_test/classes \
-            $(find shared/protocol/java/com/bridge/minecraft/protocol -name "*.java") \
-            tools/cross_lang_test/JavaCrossTest.java
+          mkdir -p tools/cross_lang_test/java_packets
+          find shared/protocol/java/com/bridge/minecraft/protocol -name "*.java" > java_sources.txt
+          javac -d tools/cross_lang_test/classes @java_sources.txt
+          javac -d tools/cross_lang_test/classes tools/cross_lang_test/JavaCrossTest.java
 
       - name: Generate C# fixtures
         run: dotnet run --project tools/cross_lang_test/CSharpSerialize.csproj --configuration Release
