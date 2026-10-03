@@ -1,0 +1,79 @@
+name: CI Cross‑Language Interoperability
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  interop-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.x'
+
+      - name: Restore and build ProtocolLib
+        run: dotnet build shared/protocol/csharp/ProtocolLib/ProtocolLib.csproj -c Release
+
+      - name: Build C# fixture generator
+        run: dotnet build tools/cross_lang_test/CSharpSerialize.csproj -c Release
+
+      - name: Build C# validator
+        run: dotnet build tools/cross_lang_test/Validator/Validator.csproj -c Release
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Compile Java protocol sources and test harness
+        run: |
+          mkdir -p tools/cross_lang_test/classes
+          javac -d tools/cross_lang_test/classes \
+            $(find shared/protocol/java/com/bridge/minecraft/protocol -name "*.java") \
+            tools/cross_lang_test/JavaCrossTest.java
+
+      - name: Generate C# fixtures
+        run: dotnet run --project tools/cross_lang_test/CSharpSerialize.csproj --configuration Release
+
+      - name: Run Java cross‑language test (C# → Java validation)
+        run: java -cp tools/cross_lang_test/classes com.bridge.minecraft.protocol.JavaCrossTest
+
+      - name: Generate Java fixtures
+        run: |
+          # JavaCrossTest already writes fixtures to tools/cross_lang_test/java_packets
+          echo "Java fixtures generated"
+
+      - name: Run C# validator against Java fixtures
+        run: dotnet run --project tools/cross_lang_test/Validator/Validator.csproj --configuration Release
+
+      - name: Verify byte‑level equality (fallback check)
+        run: |
+          set -e
+          PASS=1
+          for csharpFile in tools/cross_lang_test/csharp_packets/*.bin; do
+            base=$(basename "$csharpFile")
+            javaFile=tools/cross_lang_test/java_packets/$base
+            if [ ! -f "$javaFile" ]; then
+              echo "[FAIL] Missing Java fixture $base"
+              PASS=0
+              continue
+            fi
+            if ! cmp -s "$csharpFile" "$javaFile"; then
+              echo "[FAIL] Mismatch in $base"
+              PASS=0
+            else
+              echo "[OK] $base matches"
+            fi
+          done
+          if [ $PASS -ne 1 ]; then
+            echo "Byte‑level verification failed"
+            exit 1
+          fi
