@@ -4,12 +4,28 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+import java.nio.file.Paths;
+import com.bridge.minecraft.protocol.Messages.Message;
+import com.bridge.minecraft.protocol.Messages.HelloMessage;
+import com.bridge.minecraft.protocol.Messages.HelloAckMessage;
+import com.bridge.minecraft.protocol.Messages.PingMessage;
+import com.bridge.minecraft.protocol.Messages.PongMessage;
+import com.bridge.minecraft.protocol.Messages.FrameMetadataMessage;
+import com.bridge.minecraft.protocol.Messages.CameraStateMessage;
+import com.bridge.minecraft.protocol.Messages.InputEventMessage;
+import com.bridge.minecraft.protocol.Messages.InputFocusMessage;
+import com.bridge.minecraft.protocol.Messages.ErrorMessage;
+import com.bridge.minecraft.protocol.Messages.ShutdownMessage;
+import com.bridge.minecraft.protocol.MessageHeader;
+import com.bridge.minecraft.protocol.PacketReader;
+import com.bridge.minecraft.protocol.PacketWriter;
+import com.bridge.minecraft.protocol.ProtocolConstants;
+import com.bridge.minecraft.protocol.ProtocolException;
 public class JavaCrossTest {
     private static final String INPUT_DIR = "tools/cross_lang_test/csharp_packets";
     private static final String OUTPUT_DIR = "tools/cross_lang_test/java_packets";
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ProtocolException {
         new File(OUTPUT_DIR).mkdirs();
         File dir = new File(INPUT_DIR);
         if (!dir.isDirectory()) {
@@ -19,41 +35,41 @@ public class JavaCrossTest {
         for (File file : dir.listFiles((d, name) -> name.endsWith(".bin"))) {
             System.out.println("Processing " + file.getName());
             byte[] data = Files.readAllBytes(file.toPath());
-            MessageHeader header = MessageHeader.Parse(data, 0, true);
-            int payloadOffset = ProtocolConstants.HeaderSize;
+            MessageHeader header = MessageHeader.parse(data, 0, true);
+            int payloadOffset = ProtocolConstants.HEADER_SIZE;
             int payloadLength = (int) header.getPayloadLength();
             PacketReader reader = new PacketReader(data, payloadOffset, payloadLength);
-            IMessage message = null;
+            Message message = null;
             switch (header.getType()) {
-                case Hello:
-                    message = HelloMessage.Deserialize(reader);
+                case HELLO:
+                    message = HelloMessage.deserialize(reader);
                     break;
-                case HelloAck:
-                    message = HelloAckMessage.Deserialize(reader);
+                case HELLO_ACK:
+                    message = HelloAckMessage.deserialize(reader);
                     break;
-                case Ping:
-                    message = PingMessage.Deserialize(reader);
+                case PING:
+                    message = PingMessage.deserialize(reader);
                     break;
-                case Pong:
-                    message = PongMessage.Deserialize(reader);
+                case PONG:
+                    message = PongMessage.deserialize(reader);
                     break;
-                case FrameMetadata:
-                    message = FrameMetadataMessage.Deserialize(reader);
+                case FRAME_METADATA:
+                    message = FrameMetadataMessage.deserialize(reader);
                     break;
-                case CameraState:
-                    message = CameraStateMessage.Deserialize(reader);
+                case CAMERA_STATE:
+                    message = CameraStateMessage.deserialize(reader);
                     break;
-                case InputEvent:
-                    message = InputEventMessage.Deserialize(reader);
+                case INPUT_EVENT:
+                    message = InputEventMessage.deserialize(reader);
                     break;
-                case InputFocus:
-                    message = InputFocusMessage.Deserialize(reader);
+                case INPUT_FOCUS:
+                    message = InputFocusMessage.deserialize(reader);
                     break;
-                case Error:
-                    message = ErrorMessage.Deserialize(reader);
+                case ERROR:
+                    message = ErrorMessage.deserialize(reader);
                     break;
-                case Shutdown:
-                    message = ShutdownMessage.Deserialize(reader);
+                case SHUTDOWN:
+                    message = ShutdownMessage.deserialize(reader);
                     break;
                 default:
                     System.err.println("Unsupported type: " + header.getType());
@@ -61,13 +77,9 @@ public class JavaCrossTest {
             }
             // Re‑serialize using Java implementation
             PacketWriter writer = new PacketWriter();
-            try {
-                message.getClass().getMethod("Serialize", PacketWriter.class).invoke(message, writer);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            byte[] newPacket = writer.BuildPacket(header.getType(), header.getSequenceId());
-            Path outPath = Path.of(OUTPUT_DIR, file.getName());
+            message.serialize(writer);
+            byte[] newPacket = writer.buildPacket(header.getType(), header.getSequenceId());
+            Path outPath = Paths.get(OUTPUT_DIR, file.getName());
             Files.write(outPath, newPacket);
         }
         System.out.println("Java cross‑language test completed.");

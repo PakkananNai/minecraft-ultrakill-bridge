@@ -10,8 +10,13 @@ JavaClassesDir="$CSharpDir/classes"
 
 mkdir -p "$CSharpOutDir" "$JavaOutDir" "$JavaClassesDir"
 
-echo "=== Generating C# packets ==="
-wine "$HOME/.wine/drive_c/windows/mono/mono-2.0/lib/mono/4.5/mono.exe" "$CSharpExe"
+if command -v dotnet >/dev/null 2>&1; then
+    echo "=== Building and running C# packets ==="
+    dotnet build "$CSharpDir/CSharpSerialize.csproj" -c Release -o "$CSharpDir/bin"
+    dotnet "$CSharpDir/bin/CSharpSerialize.dll"
+else
+    echo "=== Skipping C# packet generation (dotnet not available) ==="
+fi
 
 echo "=== Compiling Java cross-language test ==="
 javac -d "$JavaClassesDir" $(find shared/protocol/java/com/bridge/minecraft/protocol -name "*.java") "$JavaSrc"
