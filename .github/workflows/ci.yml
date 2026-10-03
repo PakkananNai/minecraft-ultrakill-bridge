@@ -69,7 +69,7 @@ jobs:
           mkdir -p tools/cross_lang_test/java_packets
           find shared/protocol/java/com/bridge/minecraft/protocol -name "*.java" > java_sources.txt
           javac -d tools/cross_lang_test/classes @java_sources.txt
-          javac -d tools/cross_lang_test/classes tools/cross_lang_test/JavaCrossTest.java
+          javac -cp tools/cross_lang_test/classes -d tools/cross_lang_test/classes -source 11 -target 11 tools/cross_lang_test/JavaCrossTest.java
 
       - name: Generate C# fixtures
         run: dotnet run --project tools/cross_lang_test/CSharpSerialize.csproj --configuration Release
