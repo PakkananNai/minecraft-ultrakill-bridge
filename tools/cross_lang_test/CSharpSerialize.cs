@@ -24,7 +24,7 @@ namespace CrossLangTest
             var pong = new PongMessage { TimestampNs = 987654321UL };
             WritePacket(pong, Path.Combine(outDir, "pong.bin"), 4);
             // FrameMetadata
-            var frame = new FrameMetadataMessage { BufferId = 1, Width = 1920, Height = 1080, Stride = 1920 * 4, Format = 1, SequenceNumber = 42UL, TimestampNs = 111222333444555ULL };
+            var frame = new FrameMetadataMessage { BufferId = 1, Width = 1920, Height = 1080, Stride = 1920 * 4, Format = 1, SequenceNumber = 42UL, TimestampNs = 111222333444555UL };
             WritePacket(frame, Path.Combine(outDir, "framemetadata.bin"), 5);
             // CameraState
             var cam = new CameraStateMessage { PosX = 10.0, PosY = 20.0, PosZ = 30.0, Yaw = 45.0f, Pitch = 10.0f, Roll = 0.0f, Fov = 70.0f, SequenceNumber = 6 };
