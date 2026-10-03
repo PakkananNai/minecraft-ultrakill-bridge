@@ -40,8 +40,19 @@ jobs:
 
 
 
-      - name: Build C# validator
-        run: dotnet build tools/cross_lang_test/Validator/Validator.csproj -c Release
+      - name: Build C# validator with diagnostics
+        run: |
+          echo "=== which dotnet ==="
+          which dotnet
+          echo "=== dotnet --info ==="
+          dotnet --info
+          echo "=== dotnet --list-sdks ==="
+          dotnet --list-sdks
+          echo "=== PATH ==="
+          echo "$PATH"
+          echo "=== DOTNET_ROOT ==="
+          echo "DOTNET_ROOT=$DOTNET_ROOT"
+          dotnet build tools/cross_lang_test/Validator/Validator.csproj -c Release
 
       - name: Set up Java
         uses: actions/setup-java@v3
