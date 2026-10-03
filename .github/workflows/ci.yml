@@ -22,8 +22,18 @@ jobs:
           dotnet --info
           dotnet --list-sdks
 
-      - name: Restore and build ProtocolLib
-        run: dotnet build shared/protocol/csharp/ProtocolLib/ProtocolLib.csproj -c Release
+      - name: Diagnostic before CSharpSerialize build
+        run: |
+          echo "=== which dotnet ==="
+          which dotnet
+          echo "=== dotnet --info ==="
+          dotnet --info
+          echo "=== dotnet --list-sdks ==="
+          dotnet --list-sdks
+          echo "=== PATH ==="
+          echo "$PATH"
+          echo "=== DOTNET_ROOT ==="
+          echo "DOTNET_ROOT=$DOTNET_ROOT"
 
       - name: Build C# fixture generator
         run: dotnet build tools/cross_lang_test/CSharpSerialize.csproj -c Release
