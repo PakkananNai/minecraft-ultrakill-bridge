@@ -22,7 +22,7 @@ jobs:
           dotnet --info
           dotnet --list-sdks
 
-      - name: Diagnostic before CSharpSerialize build
+      - name: Build C# fixture generator with diagnostics
         run: |
           echo "=== which dotnet ==="
           which dotnet
@@ -34,9 +34,11 @@ jobs:
           echo "$PATH"
           echo "=== DOTNET_ROOT ==="
           echo "DOTNET_ROOT=$DOTNET_ROOT"
+          echo "=== Starting build ==="
+          dotnet build tools/cross_lang_test/CSharpSerialize.csproj -c Release
+          echo "=== Build exit code $? ==="
 
-      - name: Build C# fixture generator
-        run: dotnet build tools/cross_lang_test/CSharpSerialize.csproj -c Release
+
 
       - name: Build C# validator
         run: dotnet build tools/cross_lang_test/Validator/Validator.csproj -c Release
