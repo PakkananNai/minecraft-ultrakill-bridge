@@ -8,4 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="../../shared/protocol/csharp/ProtocolLib/ProtocolLib.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Validator\**\*.cs" />
+  </ItemGroup>
 </Project>
