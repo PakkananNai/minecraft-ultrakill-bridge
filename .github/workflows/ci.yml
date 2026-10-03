@@ -40,7 +40,7 @@ jobs:
 
 
 
-      - name: Build C# validator with diagnostics
+      - name: Build C# validator with restore and diagnostics
         run: |
           echo "=== which dotnet ==="
           which dotnet
@@ -52,6 +52,9 @@ jobs:
           echo "$PATH"
           echo "=== DOTNET_ROOT ==="
           echo "DOTNET_ROOT=$DOTNET_ROOT"
+          echo "=== Restoring validator project ==="
+          dotnet restore tools/cross_lang_test/Validator/Validator.csproj
+          echo "=== Building validator project ==="
           dotnet build tools/cross_lang_test/Validator/Validator.csproj -c Release
 
       - name: Set up Java
