@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
+export PATH="$HOME/.dotnet:$PATH"
 CSharpDir="tools/cross_lang_test"
 CSharpExe="$CSharpDir/CSharpSerialize.exe"
 CSharpOutDir="$CSharpDir/csharp_packets"
