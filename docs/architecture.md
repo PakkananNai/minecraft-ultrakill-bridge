@@ -12,7 +12,7 @@ The **Minecraft × ULTRAKILL Bridge** integrates a full, authentic Minecraft Jav
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │   MinecraftBridge Plugin (BepInEx 6 Unity Mono)       │  │
 │  │   • Lifecycle & Unity Hooking                         │  │
-│  │   • Shared Memory Frame Reader (Triple-Buffered)      │  │
+│  │   • Planned: Shared Memory Frame Reader              │  │
 │  │   • Unity Texture2D & Display Surface                 │  │
 │  │   • Input Router & F8 Focus Switcher                  │  │
 │  │   • Camera Coordinate Transformer                     │  │
@@ -43,18 +43,23 @@ The **Minecraft × ULTRAKILL Bridge** integrates a full, authentic Minecraft Jav
 
 The bridge splits inter-process communication into two distinct channels:
 
+The architecture diagram describes the target system. The repository currently contains the host plugin and shared protocol; a Fabric guest implementation is not present yet.
+
 ### A. Data Plane (Shared Memory)
 * **Transport:** Memory-mapped file backed by tmpfs (`/tmp/minecraft_ultrakill_bridge.shm`).
 * **Cross-Environment Compatibility:** In Wine, Win32 file mapping APIs (`CreateFileMapping`, `MapViewOfFile`) and native Linux `mmap` operate directly on the same kernel page cache when pointing to the same filesystem file. This enables zero-network, high-throughput memory sharing between Wine and native Linux.
-* **Architecture:** Triple-buffered framebuffer ring.
+* **Milestone 3:** File-backed mapping creation/opening, size validation, and cleanup only. The mapping helper does not define framebuffer slots or ownership.
+* **Later framebuffer milestone:** Triple-buffered framebuffer ring.
   * Buffer states: `FREE (0)`, `WRITING (1)`, `READY (2)`, `READING (3)`.
   * Monotonically increasing sequence counters.
   * Prevents tearing and avoids blocking either the Minecraft render thread or the Unity main thread.
   * If a new frame is not ready, Unity presents the previous valid frame.
 
 ### B. Control Plane (Structured Messages)
-* **Transport:** Local loopback TCP (`127.0.0.1:<port>`) or Unix domain socket / named pipe.
-* **Characteristics:** Low latency (< 0.1 ms on Linux loopback), guaranteed ordering, disconnection detection.
+* **Transport:** Local loopback TCP (`127.0.0.1:47653`) for the current host runtime.
+* **Responsibilities:** Canonical MCUB framing, HELLO/HELLO_ACK negotiation, control messages, PING/PONG liveness, SHUTDOWN, and TCP connection lifecycle.
+* **Session policy:** A session ID is allocated per accepted control connection and returned in HELLO_ACK. It is control-session metadata; it is not put in the frame header and does not fence shared-memory users.
+* **Characteristics:** TCP provides ordered bytes per connection; framing is defined by MCUB. Socket operations have bounded timeouts and close on malformed/incompatible frames.
 * **Message Framing:**
   ```text
   [Magic: 4B ("MCUB")]
@@ -64,6 +69,7 @@ The bridge splits inter-process communication into two distinct channels:
   [PayloadLen: 4B (uint32)]
   [Payload Data: N bytes]
   ```
+  The MCUB header is exactly 16 bytes, little-endian, as defined in `docs/protocol.md`.
 * **Message Types:**
   * `HELLO` / `HELLO_ACK` (Version and capability negotiation)
   * `PING` / `PONG` (Heartbeat and latency tracking)
@@ -74,6 +80,8 @@ The bridge splits inter-process communication into two distinct channels:
   * `RAYCAST_REQUEST` / `RAYCAST_RESPONSE`
   * `ENTITY_UPDATE` / `ENTITY_REMOVE`
   * `SHUTDOWN`
+
+MCUB does not grant or release shared-memory slots. Buffer state, ownership, synchronization, and data-plane recovery remain local to the shared-memory design and are not part of the Milestone 3 TCP protocol.
 
 ---
 

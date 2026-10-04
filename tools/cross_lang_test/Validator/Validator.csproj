@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../../shared/protocol/csharp/*.cs" />
     <ProjectReference Include="../../../shared/protocol/csharp/ProtocolLib/ProtocolLib.csproj" />
   </ItemGroup>
 </Project>

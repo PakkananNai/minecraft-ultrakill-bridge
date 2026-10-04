@@ -1,6 +1,8 @@
 using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.Mono;
+using MinecraftBridge.Protocol;
+using System.Net;
 using UnityEngine;
 
 namespace MinecraftBridge
@@ -17,6 +19,7 @@ namespace MinecraftBridge
         public const string PluginVersion = "0.1.0";
 
         internal static ManualLogSource Log { get; private set; }
+        private TcpControlServer _controlServer;
 
         private void Awake()
         {
@@ -36,6 +39,18 @@ namespace MinecraftBridge
             Log.LogInfo("==================================================");
             Log.LogInfo("Milestone 1 Host Plugin initialized successfully.");
             Log.LogInfo("==================================================");
+
+            try
+            {
+                _controlServer = new TcpControlServer(IPAddress.Loopback, 47653, message => Log.LogInfo(message));
+                _controlServer.Start();
+            }
+            catch (System.Exception ex)
+            {
+                Log.LogError("MCUB control server failed to start: " + ex);
+                _controlServer?.Dispose();
+                _controlServer = null;
+            }
         }
 
         private void OnEnable()
@@ -51,6 +66,8 @@ namespace MinecraftBridge
         private void OnDestroy()
         {
             Log?.LogInfo($"{PluginName} shutting down safely.");
+            _controlServer?.Dispose();
+            _controlServer = null;
         }
     }
 }

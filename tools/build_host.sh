@@ -36,7 +36,7 @@ mkdir -p "$HOME/.wine/dosdevices"
 ln -sfn "$REPO_ROOT" "$HOME/.wine/dosdevices/w:"
 
 # Find all C# source files
-SOURCES=$(find "$REPO_ROOT/host/MinecraftBridge" -name "*.cs")
+SOURCES=$(find "$REPO_ROOT/host/MinecraftBridge" -name "*.cs" -print; find "$REPO_ROOT/shared/protocol/csharp" -maxdepth 1 -name "*.cs" -print)
 if [ -z "$SOURCES" ]; then
     echo "Error: No C# source files found in host/MinecraftBridge" >&2
     exit 1
@@ -65,6 +65,8 @@ wine "$WINE_MCS" \
     -out:"$W_OUTPUT" \
     -r:"$MANAGED_W\\mscorlib.dll" \
     -r:"$MANAGED_W\\netstandard.dll" \
+    -r:"$MANAGED_W\\System.dll" \
+    -r:"$MANAGED_W\\System.Core.dll" \
     -r:"$BEPINEX_W\\BepInEx.Core.dll" \
     -r:"$BEPINEX_W\\BepInEx.Unity.Mono.dll" \
     -r:"$MANAGED_W\\UnityEngine.CoreModule.dll" \

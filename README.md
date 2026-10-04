@@ -38,4 +38,8 @@ minecraft-ultrakill-bridge/
 ## Current Status
 
 * **Milestone 0 (Environment Inspection):** Completed. Environment audited and verified.
-* **Milestone 1 (Minimal Host Plugin):** Ready for implementation.
+* **Milestone 1 (Minimal Host Plugin):** Completed.
+* **Milestone 2 (Shared Protocol):** Completed; canonical C# and Java serializers use the fixed 16-byte MCUB header.
+* **Milestone 3 (Interprocess Communication):** Implemented and validated for canonical TCP control lifecycle and file-backed mapping management. Framebuffer ownership/recovery is intentionally deferred.
+
+Milestone 3 validation: run `KEEP_LOGS=1 tools/tcp_protocol_validation/run.sh`. The new suite exercises actual native/Linux ↔ Wine Mono sockets and shared mappings. `tools/tcp_control_validation/` is a legacy private-protocol experiment and is not canonical MCUB validation.

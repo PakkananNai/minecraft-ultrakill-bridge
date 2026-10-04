@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0.0  
 **Protocol Version:** 1  
-**Status:** Implemented (Milestone 2)
+**Status:** Canonical wire format implemented (Milestone 2); TCP control runtime added for Milestone 3
 
 ---
 
@@ -36,7 +36,7 @@ Every packet transmitted over the control channel consists of a fixed-size **16-
 | :--- | :--- | :--- | :--- |
 | `0x00` | `Magic` | `uint32` | Magic identification constant: ASCII `"MCUB"` (`0x4255434D` in Little-Endian). |
 | `0x04` | `Version` | `uint16` | Protocol version number (currently `1`). |
-| `0x05` | `MessageType` | `uint16` | Enumerated message identifier. |
+| `0x06` | `MessageType` | `uint16` | Enumerated message identifier. |
 | `0x08` | `SequenceId` | `uint32` | Monotonically increasing sequence number for message correlation and ordering. |
 | `0x0C` | `PayloadLength` | `uint32` | Length of following payload in bytes (maximum permitted: `65536` bytes = 64 KB). |
 
@@ -133,7 +133,19 @@ Sent in response to HELLO:
 
 ---
 
-## 5. Error Handling & Validation Rules
+## 5. Milestone 3 TCP session policy
+
+The host control endpoint listens on loopback TCP port `47653`. Each direction uses an independent `SequenceId` counter beginning at `1` for a connection; received sequence values must be contiguous. A sequence counter is not a session identifier and is not shared-memory state.
+
+The host requires HELLO as the first client frame. It validates the header and HELLO payload protocol versions, then returns HELLO_ACK with a nonzero randomly generated `SessionId` for a successful connection. A rejected payload version receives a nonzero status, the supported version, session ID `0`, and an error string. IDs are not reused during one host server lifetime. The client retains the ID as control-session metadata. It is not included in later canonical headers or payloads and does not fence stale access to a shared mapping.
+
+PING is answered with PONG carrying the same timestamp. SHUTDOWN is a one-way notice; the receiver closes that connection. A peer disconnect, malformed frame, unsupported header version, idle receive timeout, or server shutdown closes the connection and releases its socket/session resources. The Milestone 3 endpoint handles HELLO, PING, PONG, ERROR, and SHUTDOWN; other already-defined message types remain canonical but are not yet application-handled by this endpoint.
+
+This endpoint uses canonical `ERROR` payloads for well-formed but unsupported types: error code `1` means unknown message type and code `2` means a known type is not handled by this Milestone 3 endpoint. These are endpoint-local code values within the existing canonical `ErrorCode` field; they add no message type or payload field.
+
+The TCP connection lifecycle is independent of shared-memory buffer ownership. Triple-buffer state, local synchronization, and data-plane recovery are deferred to the framebuffer milestone. A new HELLO/HELLO_ACK session ID alone is not a shared-memory fencing or reclamation mechanism.
+
+## 6. Error Handling & Validation Rules
 
 1. **Magic Mismatch:** If the first 4 bytes of a stream or packet do not equal `"MCUB"` (`0x4255434D`), the connection must be dropped immediately.
 2. **Payload Bounds:** If `PayloadLength > 65536`, the reader must reject the packet with `ERR_PAYLOAD_TOO_LARGE` without allocating memory.

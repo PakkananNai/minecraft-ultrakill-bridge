@@ -36,6 +36,8 @@ wine "$WINE_MCS" \
     -out:"$W_OUTPUT" \
     -r:"$MANAGED_W\\mscorlib.dll" \
     -r:"$MANAGED_W\\netstandard.dll" \
+    -r:"$MANAGED_W\\System.dll" \
+    -r:"$MANAGED_W\\System.Core.dll" \
     "${W_SOURCES[@]}"
 
 echo "=== Executing C# Protocol Unit Tests via Wine ==="

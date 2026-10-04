@@ -16,6 +16,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../shared/protocol/csharp/ProtocolLib/ProtocolLib.csproj" />
+
     <!-- BepInEx 6 Core Assemblies -->
     <Reference Include="BepInEx.Core">
       <HintPath>$(BepInExCore)/BepInEx.Core.dll</HintPath>
