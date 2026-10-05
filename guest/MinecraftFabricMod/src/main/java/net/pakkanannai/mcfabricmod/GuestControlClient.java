@@ -48,6 +48,16 @@ public final class GuestControlClient implements AutoCloseable {
 
     void setInputBridge(GuestInputBridge inputBridge) { this.inputBridge = inputBridge; }
 
+    void sendCameraState(double posX, double posY, double posZ, float yaw, float pitch, float roll, float fov, long sequenceNumber) {
+        if (!isConnected()) return;
+        try {
+            writeMessage(socket, new Messages.CameraStateMessage(posX, posY, posZ, yaw, pitch, roll, fov, sequenceNumber));
+        } catch (IOException e) {
+            LOGGER.debug("Could not send camera state", e);
+            closeSocket();
+        }
+    }
+
     public void start() {
         if (!started.compareAndSet(false, true)) return;
         Thread thread = new Thread(this::connectionLoop, "MinecraftBridge-TCP");

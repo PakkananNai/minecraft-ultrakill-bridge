@@ -38,6 +38,7 @@ namespace MinecraftBridge
         private float _nextRenderLogTime;
         private bool _capturedM6Screenshot;
         private InputBridge _inputBridge;
+        private CameraBridge _cameraBridge;
         private readonly Dictionary<uint, Tuple<SharedFramebuffer, string, string>> _mappings = new Dictionary<uint, Tuple<SharedFramebuffer, string, string>>();
         private readonly Dictionary<uint, TcpControlServer.ControlSession> _sessions = new Dictionary<uint, TcpControlServer.ControlSession>();
         private ConfigEntry<string> _linuxSharedDirectory;
@@ -70,10 +71,12 @@ namespace MinecraftBridge
                     "Wine drive directory that resolves to the same native directory.");
                 _controlServer = new TcpControlServer(IPAddress.Loopback, 47653, message => Log.LogInfo(message));
                 _controlServer.SessionEstablished += OnControlSessionEstablished;
+                _controlServer.CameraStateReceived += OnCameraStateReceived;
                 _controlServer.SessionClosed += OnControlSessionClosed;
                 _controlServer.Start();
                 CreateMinecraftSurface();
                 _inputBridge = new InputBridge(message => Log.LogInfo(message));
+                _cameraBridge = new CameraBridge();
             }
             catch (System.Exception ex)
             {
@@ -124,6 +127,13 @@ namespace MinecraftBridge
             }
         }
 
+        private void OnCameraStateReceived(TcpControlServer.ControlSession session, CameraStateMessage camera)
+        {
+            _cameraBridge?.Enqueue(camera);
+            Log.LogInfo("M8_CAMERA_STATE_RECEIVED session=" + session.SessionId
+                + " seq=" + camera.SequenceNumber);
+        }
+
         private void OnControlSessionClosed(uint sessionId)
         {
             Tuple<SharedFramebuffer, string, string> entry = null;
@@ -169,6 +179,7 @@ namespace MinecraftBridge
         private void Update()
         {
             _inputBridge?.Tick();
+            _cameraBridge?.Update();
             if (_mappings.Count == 0) return;
 
             Tuple<SharedFramebuffer, string, string> entry = null;
@@ -262,6 +273,8 @@ namespace MinecraftBridge
             Log?.LogInfo($"{PluginName} shutting down safely.");
             _inputBridge?.Dispose();
             _inputBridge = null;
+            _cameraBridge?.Dispose();
+            _cameraBridge = null;
             _controlServer?.Dispose();
             _controlServer = null;
             if (_minecraftTexture != null) { Destroy(_minecraftTexture); _minecraftTexture = null; }

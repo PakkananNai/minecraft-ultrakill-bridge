@@ -117,11 +117,13 @@ Serialization order is exactly the table order, using the canonical little-endia
 * `PosX` (`float64`): Camera X position in world units.
 * `PosY` (`float64`): Camera Y position in world units.
 * `PosZ` (`float64`): Camera Z position in world units.
-* `Yaw` (`float32`): Rotation yaw in degrees.
-* `Pitch` (`float32`): Rotation pitch in degrees.
-* `Roll` (`float32`): Rotation roll in degrees.
-* `Fov` (`float32`): Vertical or horizontal field of view in degrees.
-* `SequenceNumber` (`uint64`): Frame/tick sequence number.
+* `Yaw` (`float32`): Minecraft camera yaw in degrees.
+* `Pitch` (`float32`): Minecraft camera pitch in degrees.
+* `Roll` (`float32`): Camera roll in degrees; currently `0` from the guest.
+* `Fov` (`float32`): Minecraft camera FOV in degrees.
+* `SequenceNumber` (`uint64`): Monotonically increasing guest camera sequence.
+
+Direction is guest-to-host. The guest samples its active camera entity every three Minecraft client ticks and sends the state over the TCP control plane. The host queues the state on the socket worker thread and applies only the newest sequence on Unity's main thread. Host application maps Minecraft `(x, y, z)` to Unity `(x, y, -z)` and converts yaw/pitch/roll into the Unity camera rotation convention. The mirrored Unity camera is disabled and does not replace ULTRAKILL's active gameplay camera; it is the authoritative bridge camera for later interaction/raycast work. The host recreates the bridge camera if a Unity scene transition destroys its temporary scene object.
 
 ### 4.7 INPUT_EVENT (`Type = 10`)
 * `EventType` (`uint8`): `1 = KEY_DOWN`, `2 = KEY_UP`, `3 = MOUSE_MOVE_RELATIVE`, `4 = MOUSE_DOWN`, `5 = MOUSE_UP`, `6 = MOUSE_WHEEL`.

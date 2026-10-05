@@ -13,6 +13,8 @@ public final class MinecraftBridgeMod implements ClientModInitializer {
     private GuestControlClient controlClient;
     private MinecraftFramebufferCapture framebufferCapture;
     private GuestInputBridge inputBridge;
+    private long cameraSequence;
+    private int cameraTickCounter;
 
     @Override public void onInitializeClient() {
         controlClient = new GuestControlClient();
@@ -23,6 +25,7 @@ public final class MinecraftBridgeMod implements ClientModInitializer {
         HudRenderCallback.EVENT.register((drawContext, tickCounter) ->
                 framebufferCapture.capture(MinecraftClient.getInstance()));
         ClientTickEvents.END_CLIENT_TICK.register(client -> inputBridge.tick(client));
+        ClientTickEvents.END_CLIENT_TICK.register(this::sendCameraState);
         if (Boolean.getBoolean("minecraft.ultrakill.bridge.captureWithoutWorld")) {
             ClientTickEvents.END_CLIENT_TICK.register(client -> framebufferCapture.capture(client));
             LOGGER.info("Diagnostic framebuffer capture tick hook enabled");
@@ -34,5 +37,17 @@ public final class MinecraftBridgeMod implements ClientModInitializer {
             controlClient.close();
         });
         LOGGER.info("Minecraft bridge guest initialized");
+    }
+
+    private void sendCameraState(MinecraftClient client) {
+        if (++cameraTickCounter < 3) return;
+        cameraTickCounter = 0;
+        if (client.getCameraEntity() == null || !controlClient.isConnected()) return;
+
+        var camera = client.getCameraEntity();
+        var position = camera.getCameraPosVec(1.0f);
+        double fov = client.options.getFov().getValue();
+        controlClient.sendCameraState(position.x, position.y, position.z,
+                camera.getYaw(1.0f), camera.getPitch(1.0f), 0.0f, (float) fov, ++cameraSequence);
     }
 }

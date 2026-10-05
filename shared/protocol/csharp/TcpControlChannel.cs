@@ -47,6 +47,7 @@ namespace MinecraftBridge.Protocol
         }
 
         public event Action<ControlSession> SessionEstablished;
+        public event Action<ControlSession, CameraStateMessage> CameraStateReceived;
         public event Action<uint> SessionClosed;
 
         public TcpControlServer(IPAddress address, int port, Action<string> log = null, int ioTimeoutMilliseconds = 15000)
@@ -166,6 +167,10 @@ namespace MinecraftBridge.Protocol
                             break;
                         case MessageType.Pong:
                             ReadPing(frame.Payload); // Validate canonical timestamp payload.
+                            break;
+                        case MessageType.CameraState:
+                            CameraStateMessage camera = ReadCameraState(frame.Payload);
+                            CameraStateReceived?.Invoke(controlSession, camera);
                             break;
                         case MessageType.Shutdown:
                             ReadShutdown(frame.Payload);
@@ -291,6 +296,16 @@ namespace MinecraftBridge.Protocol
             {
                 ShutdownMessage.Deserialize(reader);
                 RequirePayloadEnd(reader);
+            }
+        }
+
+        internal static CameraStateMessage ReadCameraState(byte[] payload)
+        {
+            using (PacketReader reader = new PacketReader(payload))
+            {
+                CameraStateMessage camera = CameraStateMessage.Deserialize(reader);
+                RequirePayloadEnd(reader);
+                return camera;
             }
         }
 

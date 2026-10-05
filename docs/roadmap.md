@@ -16,7 +16,7 @@ This roadmap tracks the development progress of the **Minecraft × ULTRAKILL Bri
 | **5** | **Framebuffer Capture** | ✅ **Complete** | Canonical triple-buffer, START_STREAM identity, asynchronous BGRA8 PBO capture, cross-process stress, and live Minecraft 1.21.1 validation passed. |
 | **6** | **Host Rendering** | ✅ **Complete** | Live Minecraft 1.21.1 → shared framebuffer → Unity Texture2D/RawImage presentation verified under ULTRAKILL/Wine; repeated `M6_FRAME_PRESENTED` frames and an independently inspectable screenshot artifact were captured. |
 | **7** | **Input Integration** | ✅ **Complete** | Unity Input System capture, F8 focus switching, canonical input forwarding, client-thread guest application, and held-input release verified in the combined GUI runtime. |
-| **8** | **Camera Synchronization** | 📋 Planned | Coordinate system mapping and camera transform synchronization. |
+| **8** | **Camera Synchronization** | ✅ **Complete** | Guest camera sampling, canonical TCP synchronization, Minecraft→Unity coordinate/rotation mapping, scene-lifetime recovery, and live runtime application verified. |
 | **9** | **Block Interaction & Collision**| 📋 Planned | Block raycasts, placement, and breaking. |
 | **10** | **Entity Synchronization** | 📋 Planned | Lightweight entity metadata discovery and positioning. |
 | **11** | **Damage & Gameplay** | 📋 Planned | Bi-directional damage events and health synchronization. |
@@ -95,3 +95,16 @@ M5 runtime evidence: 267 live frames were observed at 1366x700 with final sequen
 ### Milestone 7 runtime evidence / completion
 
 The final combined Wayland runtime used session `2733717925` with the actual ULTRAKILL BepInEx host and Minecraft 1.21.1 Fabric guest. The guest validated the shared framebuffer identity and remained connected while M7 input was exercised. Host logs verified F8 focus acquisition, relative mouse movement, keyboard W down/up, left mouse down/up, and wheel transmission. Guest logs verified focus acquisition and application of relative mouse movement, W down/up, and left mouse down/up on the Minecraft render thread. Repeated F8 injection produced reversible host focus transitions including focus loss with held-input release. M7 is complete; see `docs/milestone7_report.md` for the evidence matrix.
+
+
+### Milestone 8 — Camera Synchronization ✅ Complete
+- [x] Sample the active Minecraft camera entity on the client thread.
+- [x] Send canonical `CAMERA_STATE` guest → host without changing the MCUB header or message schema.
+- [x] Rate-limit camera packets to one update every three client ticks.
+- [x] Queue camera state from the TCP worker and apply only on Unity's main thread.
+- [x] Map Minecraft `(x, y, z)` to Unity `(x, y, -z)` and convert yaw/pitch/roll.
+- [x] Mirror FOV into a disabled Unity bridge camera.
+- [x] Recover the bridge camera if a Unity scene transition destroys its temporary GameObject.
+- [x] Verify live Minecraft 1.21.1 camera state through the ULTRAKILL/Wine runtime.
+
+**M8 evidence:** Final runtime session `1435401860` connected Minecraft 1.21.1 to the ULTRAKILL host and applied repeated camera states. Host evidence includes `M8_CAMERA_APPLIED` at counts 30, 60, and 90 with position `(12.50, 73.62, 53.50)`, Unity yaw `180`, pitch `0`, roll `0`, and FOV `70`. A scene-lifetime destruction bug was reproduced and fixed with `DontDestroyOnLoad` plus defensive recreation. See `docs/milestone8_report.md`.
