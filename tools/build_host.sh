@@ -24,6 +24,8 @@ for dll in "$BEPINEX_CORE/BepInEx.Core.dll" \
            "$MANAGED_DIR/netstandard.dll" \
            "$MANAGED_DIR/mscorlib.dll" \
            "$MANAGED_DIR/UnityEngine.CoreModule.dll" \
+           "$MANAGED_DIR/UnityEngine.UIModule.dll" \
+           "$MANAGED_DIR/UnityEngine.UI.dll" \
            "$MANAGED_DIR/UnityEngine.dll"; do
     if [ ! -f "$dll" ]; then
         echo "Error: Missing required assembly: $dll" >&2
@@ -71,6 +73,8 @@ wine "$WINE_MCS" \
     -r:"$BEPINEX_W\\BepInEx.Core.dll" \
     -r:"$BEPINEX_W\\BepInEx.Unity.Mono.dll" \
     -r:"$MANAGED_W\\UnityEngine.CoreModule.dll" \
+    -r:"$MANAGED_W\\UnityEngine.UIModule.dll" \
+    -r:"$MANAGED_W\\UnityEngine.UI.dll" \
     -r:"$MANAGED_W\\UnityEngine.dll" \
     "${W_SOURCES[@]}"
 

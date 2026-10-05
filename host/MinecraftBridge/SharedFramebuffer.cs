@@ -207,6 +207,26 @@ namespace MinecraftBridge.Framebuffer
             return data;
         }
 
+        public bool TryReadLatestFrame(out FrameMetadata metadata, out byte[] payload)
+        {
+            metadata = null;
+            payload = null;
+            int slot = TryAcquireLatestReady(out ulong sequence);
+            if (slot < 0) return false;
+            try
+            {
+                metadata = GetMetadata(slot);
+                payload = ReadPayload(slot);
+                if (metadata.Sequence != sequence)
+                    throw new InvalidDataException("Frame sequence changed while reading");
+                return true;
+            }
+            finally
+            {
+                ReleaseReading(slot);
+            }
+        }
+
         private void Initialize(uint sessionId, ulong generationHi, ulong generationLo)
         {
             WriteU32(0, Magic); WriteU16(4, Version); WriteU16(6, MappingHeaderSize); WriteU32(8, SlotCount);
