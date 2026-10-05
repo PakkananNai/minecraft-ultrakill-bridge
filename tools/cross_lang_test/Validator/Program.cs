@@ -35,6 +35,9 @@ namespace CrossLangValidator
                         case MessageType.HelloAck:
                             message = HelloAckMessage.Deserialize(reader);
                             break;
+                        case MessageType.StartStream:
+                            message = StartStreamMessage.Deserialize(reader);
+                            break;
                         case MessageType.Ping:
                             message = PingMessage.Deserialize(reader);
                             break;

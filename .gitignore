@@ -46,3 +46,4 @@ Mods/
 # Misc
 .DS_Store
 Thumbs.db
+.aider*

@@ -104,6 +104,50 @@ namespace MinecraftBridge.Protocol
         }
     }
 
+    /// <summary>Advertises the initialized shared framebuffer mapping to the guest.</summary>
+    public sealed class StartStreamMessage : IMessage
+    {
+        public MessageType MessageType => MessageType.StartStream;
+        public uint SessionId { get; set; }
+        public string MappingPath { get; set; } = string.Empty;
+        public ulong GenerationHi { get; set; }
+        public ulong GenerationLo { get; set; }
+
+        public void Serialize(PacketWriter writer)
+        {
+            Validate();
+            writer.WriteUInt32(SessionId);
+            writer.WriteString(MappingPath);
+            writer.WriteUInt64(GenerationHi);
+            writer.WriteUInt64(GenerationLo);
+        }
+
+        public static StartStreamMessage Deserialize(PacketReader reader)
+        {
+            var message = new StartStreamMessage
+            {
+                SessionId = reader.ReadUInt32(),
+                MappingPath = reader.ReadString(),
+                GenerationHi = reader.ReadUInt64(),
+                GenerationLo = reader.ReadUInt64()
+            };
+            message.Validate();
+            return message;
+        }
+
+        private void Validate()
+        {
+            if (SessionId == 0) throw new ProtocolValidationException("START_STREAM SessionId must be non-zero");
+            if (string.IsNullOrEmpty(MappingPath) || MappingPath == "/" || MappingPath[0] != '/' ||
+                MappingPath.Contains("\\") || MappingPath.Contains("//") || MappingPath.EndsWith("/") || MappingPath.IndexOf('\0') >= 0)
+                throw new ProtocolValidationException("START_STREAM MappingPath must be a normalized Linux file path");
+            foreach (string segment in MappingPath.Split('/'))
+                if (segment == "." || segment == "..") throw new ProtocolValidationException("START_STREAM MappingPath must be normalized");
+            if (GenerationHi == 0 && GenerationLo == 0)
+                throw new ProtocolValidationException("START_STREAM generation must be non-zero");
+        }
+    }
+
     public class FrameMetadataMessage : IMessage
     {
         public MessageType MessageType => MessageType.FrameMetadata;

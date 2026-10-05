@@ -27,6 +27,28 @@ namespace MinecraftBridge.Protocol
         private Thread _acceptThread;
         private volatile bool _stopping;
 
+        public sealed class ControlSession
+        {
+            private readonly Stream _stream;
+            private readonly object _sendGate = new object();
+            private uint _txSequence = 2;
+            internal ControlSession(uint sessionId, Stream stream, uint nextTxSequence)
+            {
+                SessionId = sessionId;
+                _stream = stream;
+                _txSequence = nextTxSequence;
+            }
+            public uint SessionId { get; private set; }
+            public void Send(IMessage message)
+            {
+                if (message == null) throw new ArgumentNullException(nameof(message));
+                lock (_sendGate) WriteMessage(_stream, message, ref _txSequence);
+            }
+        }
+
+        public event Action<ControlSession> SessionEstablished;
+        public event Action<uint> SessionClosed;
+
         public TcpControlServer(IPAddress address, int port, Action<string> log = null, int ioTimeoutMilliseconds = 15000)
         {
             _address = address ?? throw new ArgumentNullException(nameof(address));
@@ -96,6 +118,7 @@ namespace MinecraftBridge.Protocol
             uint tx = 1;
             uint rx = 1;
             uint sessionId = 0;
+            ControlSession controlSession = null;
             try
             {
                 NetworkStream stream = client.GetStream();
@@ -121,6 +144,8 @@ namespace MinecraftBridge.Protocol
                 sessionId = NewSessionId();
                 SendHelloAck(stream, ref tx, 0, sessionId, string.Empty);
                 Log("MCUB_SESSION_ESTABLISHED id=" + sessionId + " client=" + hello.ClientName + " version=" + hello.ClientVersion);
+                controlSession = new ControlSession(sessionId, stream, tx);
+                SessionEstablished?.Invoke(controlSession);
 
                 while (!_stopping)
                 {
@@ -128,7 +153,7 @@ namespace MinecraftBridge.Protocol
                     RequireNext(ref rx, frame.Header.SequenceId);
                     if (!IsCanonicalType(frame.Header.Type))
                     {
-                        SendError(stream, ref tx, 1, "Unsupported message type " + (ushort)frame.Header.Type);
+                        controlSession.Send(new ErrorMessage { ErrorCode = 1, Description = "Unsupported message type " + (ushort)frame.Header.Type });
                         Log("MCUB_UNKNOWN_TYPE type=" + (ushort)frame.Header.Type);
                         continue;
                     }
@@ -137,7 +162,7 @@ namespace MinecraftBridge.Protocol
                     {
                         case MessageType.Ping:
                             PingMessage ping = ReadPing(frame.Payload);
-                            WriteMessage(stream, new PongMessage { TimestampNs = ping.TimestampNs }, ref tx);
+                            controlSession.Send(new PongMessage { TimestampNs = ping.TimestampNs });
                             break;
                         case MessageType.Pong:
                             ReadPing(frame.Payload); // Validate canonical timestamp payload.
@@ -151,7 +176,7 @@ namespace MinecraftBridge.Protocol
                             Log("MCUB_PEER_ERROR session=" + sessionId);
                             break;
                         default:
-                            SendError(stream, ref tx, 2, "Message is not handled by the Milestone 3 control endpoint");
+                            controlSession.Send(new ErrorMessage { ErrorCode = 2, Description = "Message is not handled by the framebuffer control endpoint" });
                             break;
                     }
                 }
@@ -162,6 +187,11 @@ namespace MinecraftBridge.Protocol
             }
             finally
             {
+                if (sessionId != 0)
+                {
+                    try { SessionClosed?.Invoke(sessionId); }
+                    catch (Exception ex) { Log("MCUB_SESSION_CLOSE_CALLBACK_ERROR " + ex.GetType().Name + ": " + ex.Message); }
+                }
                 CloseClient(client);
                 if (sessionId != 0) Log("MCUB_SESSION_CLEANUP id=" + sessionId);
                 lock (_gate) _workers.Remove(Thread.CurrentThread);

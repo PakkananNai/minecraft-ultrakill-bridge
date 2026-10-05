@@ -12,8 +12,8 @@ This roadmap tracks the development progress of the **Minecraft × ULTRAKILL Bri
 | **1** | **Minimal Host Plugin** | ✅ **Done** | BepInEx 6 plugin compiled, loaded in ULTRAKILL, logged engine/GPU diagnostics. |
 | **2** | **Shared Protocol** | ✅ **Done** | Versioned packet format, serialization, and unit tests passed (C# & Java). |
 | **3** | **Interprocess Communication** | ✅ **Implemented** | File-backed mapping lifecycle plus canonical 16-byte TCP control, handshake/session negotiation, ping/pong, shutdown, cross-language and socket validation. No ring buffer claim. |
-| **4** | **Minecraft Guest Mod** | 📋 Planned | Fabric 1.21.1 client mod connects to control channel and completes handshake. |
-| **5** | **Framebuffer Capture** | 📋 Planned | Guest captures RGBA8 frames into triple-buffered shared memory. |
+| **4** | **Minecraft Guest Mod** | ✅ **Done** | Fabric 1.21.1 client mod connects to control channel, completes handshake, and validates advertised shared mapping identity. |
+| **5** | **Framebuffer Capture** | 🚧 **In Progress** | Canonical triple-buffer and START_STREAM identity validation are implemented; Fabric guest now submits asynchronous BGRA8 PBO readbacks and publishes on a worker. Actual 1.21.1 game and host end-to-end runtime validation remain. |
 | **6** | **Host Rendering** | 📋 Planned | Host reads shared memory frames and presents them on Unity Texture2D. |
 | **7** | **Input Integration** | 📋 Planned | Keyboard/mouse forwarding with F8 focus switcher and stuck-key prevention. |
 | **8** | **Camera Synchronization** | 📋 Planned | Coordinate system mapping and camera transform synchronization. |
@@ -52,6 +52,20 @@ This roadmap tracks the development progress of the **Minecraft × ULTRAKILL Bri
 - [x] Validate native ↔ Wine Mono TCP in both directions; fragmented and coalesced frames; malformed/oversized/truncated frames; disconnect and cleanup.
 - [x] Validate native ↔ managed mapping values/layout and both create/open paths.
 - [x] Preserve C# and Java protocol unit and cross-language packet round-trip suites.
-- [ ] Guest Fabric runtime integration is Milestone 4; triple-buffer ownership and data-plane recovery remain Milestone 5 work.
+- [x] Guest Fabric runtime integration is tracked under Milestone 4; triple-buffer ownership and data-plane recovery remain Milestone 5 work.
 
 Evidence logs: `tools/tcp_protocol_validation/logs/20261004T114700Z-425212/` (`KEEP_LOGS=1`). Host plugin compiled with `tools/build_host.sh`. C# protocol tests passed 52 assertions; Java protocol tests passed 51 assertions.
+
+### Milestone 5 — Framebuffer Capture ✅ Complete
+- [x] Define and implement the canonical 128-byte mapping/slot headers and three-slot BGRA8 layout.
+- [x] Implement Java guest and C# host shared-buffer primitives, generation checks, atomic ownership, checksums, and latest-frame selection.
+- [x] Advertise mapping identity through existing `START_STREAM` ID 6; guest validates session, size, header, and generation before use.
+- [x] Implement Fabric post-HUD framebuffer capture using a three-entry OpenGL PBO ring and zero-timeout GPU fence polling.
+- [x] Publish completed BGRA8 readbacks from a dedicated worker thread; drop frames when no slot/PBO is available.
+- [x] Add direct-ByteBuffer publication, metadata ownership, reserved-byte, cancellation, identity, and protocol tests.
+- [x] Add guest reconnect with bounded exponential backoff and validate fresh session/mapping identity after a simulated host disconnect.
+- [x] Run 2,000 cross-process frames in each Java↔C# direction with metadata, checksum, payload, and latest-frame verification.
+- [x] Run in the actual Minecraft 1.21.1 client and verify live BGRA8 framebuffer publication at 854x480 and 1366x700 runtime resolutions.
+- [x] Validate simulated host disconnect/reconnect with fresh session IDs, generations, mappings, and continued live frame publication.
+
+M5 runtime evidence: 267 live frames were observed at 1366x700 with final sequence 267, 3,824,800-byte payloads, stride 5,464, BGRA8 format, and non-zero checksums. A prior 854x480 run produced 33+ live frames. The reconnect run produced 9 frames on each of two fresh mappings. Unity host presentation remains Milestone 6; full-resolution 3840x2160 GPU throughput is not claimed because the development display is not 4K.

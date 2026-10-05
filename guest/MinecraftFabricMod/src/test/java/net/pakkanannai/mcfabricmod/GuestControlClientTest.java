@@ -40,10 +40,27 @@ class GuestControlClientTest {
             assertNotNull(hello, "server received HELLO");
             assertEquals("MinecraftFabricMod", hello.getClientName());
             assertTrue(await(client::isConnected, 3, TimeUnit.SECONDS), "HELLO_ACK completes connection");
+            assertTrue(await(client::hasValidatedFramebuffer, 4, TimeUnit.SECONDS), "START_STREAM mapping identity is opened and validated");
             assertTrue(await(server::sawPing, 4, TimeUnit.SECONDS), "client sends PING");
             assertNull(server.failure());
             client.close();
-            assertTrue(await(server::sawShutdown, 2, TimeUnit.SECONDS), "client sends graceful SHUTDOWN");
+            assertTrue(await(server::sawShutdown, 4, TimeUnit.SECONDS), "client sends graceful SHUTDOWN");
+            assertNull(server.failure());
+        }
+    }
+
+    @Test void reconnectsWithFreshSessionAndMappingAfterHostDisconnect() throws Exception {
+        try (ReconnectTestServer server = new ReconnectTestServer()) {
+            GuestControlClient client = new GuestControlClient();
+            client.start();
+            assertTrue(await(() -> server.connectionCount() == 2 && server.secondStreamSent()
+                    && client.isConnected() && client.activeFramebufferSessionId() == 1002L, 8, TimeUnit.SECONDS),
+                    "guest reconnects and validates the replacement session mapping");
+            assertTrue(await(server::sawPing, 4, TimeUnit.SECONDS), "reconnected guest resumes heartbeat");
+            assertNull(server.failure());
+            client.close();
+            assertTrue(await(server::sawShutdown, 4, TimeUnit.SECONDS), "reconnected guest sends graceful SHUTDOWN");
+            assertNull(server.failure());
         }
     }
 

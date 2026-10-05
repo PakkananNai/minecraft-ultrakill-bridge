@@ -17,6 +17,15 @@ namespace CrossLangTest
             // HelloAck
             var helloAck = new HelloAckMessage { Status = 0, AcceptedVersion = 1, SessionId = 0x12345678, ErrorMessage = "" };
             WritePacket(helloAck, Path.Combine(outDir, "helloack.bin"), 2);
+            // StartStream mapping identity
+            var startStream = new StartStreamMessage
+            {
+                SessionId = 0x12345678,
+                MappingPath = "/tmp/minecraft-ultrakill-bridge-test.shm",
+                GenerationHi = 0x1122334455667788UL,
+                GenerationLo = 0x7766554433221100UL
+            };
+            WritePacket(startStream, Path.Combine(outDir, "startstream.bin"), 11);
             // Ping
             var ping = new PingMessage { TimestampNs = 123456789UL };
             WritePacket(ping, Path.Combine(outDir, "ping.bin"), 3);

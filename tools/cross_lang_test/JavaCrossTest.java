@@ -9,6 +9,7 @@ import com.bridge.minecraft.protocol.Messages.Message;
 import com.bridge.minecraft.protocol.Messages.HelloMessage;
 import com.bridge.minecraft.protocol.Messages.HelloAckMessage;
 import com.bridge.minecraft.protocol.Messages.PingMessage;
+import com.bridge.minecraft.protocol.Messages.StartStreamMessage;
 import com.bridge.minecraft.protocol.Messages.PongMessage;
 import com.bridge.minecraft.protocol.Messages.FrameMetadataMessage;
 import com.bridge.minecraft.protocol.Messages.CameraStateMessage;
@@ -46,6 +47,9 @@ public class JavaCrossTest {
                     break;
                 case HELLO_ACK:
                     message = HelloAckMessage.deserialize(reader);
+                    break;
+                case START_STREAM:
+                    message = StartStreamMessage.deserialize(reader);
                     break;
                 case PING:
                     message = PingMessage.deserialize(reader);

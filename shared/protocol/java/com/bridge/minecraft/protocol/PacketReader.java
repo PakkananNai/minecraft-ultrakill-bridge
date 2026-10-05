@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 
 public class PacketReader {
     private final byte[] buffer;
-    private final int offset;
+
     private final int limit;
     private int position;
 
@@ -14,7 +14,7 @@ public class PacketReader {
             throw new IndexOutOfBoundsException("Offset and length exceed buffer boundary");
         }
         this.buffer = buffer;
-        this.offset = offset;
+
         this.position = offset;
         this.limit = offset + length;
     }

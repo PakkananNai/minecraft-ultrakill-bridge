@@ -62,6 +62,7 @@ wine "$WINE_MCS" \
     -target:library \
     -nostdlib \
     -noconfig \
+    -unsafe \
     -out:"$W_OUTPUT" \
     -r:"$MANAGED_W\\mscorlib.dll" \
     -r:"$MANAGED_W\\netstandard.dll" \

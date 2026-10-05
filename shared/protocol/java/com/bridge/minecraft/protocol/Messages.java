@@ -137,6 +137,61 @@ public final class Messages {
         }
     }
 
+    /** Advertises the initialized shared framebuffer mapping to the guest. */
+    public static class StartStreamMessage implements Message {
+        private long sessionId;
+        private String mappingPath = "";
+        private long generationHi;
+        private long generationLo;
+
+        public StartStreamMessage() {}
+        public StartStreamMessage(long sessionId, String mappingPath, long generationHi, long generationLo) {
+            this.sessionId = sessionId;
+            this.mappingPath = mappingPath;
+            this.generationHi = generationHi;
+            this.generationLo = generationLo;
+            validate();
+        }
+
+        @Override public MessageType getMessageType() { return MessageType.START_STREAM; }
+        public long getSessionId() { return sessionId; }
+        public String getMappingPath() { return mappingPath; }
+        public long getGenerationHi() { return generationHi; }
+        public long getGenerationLo() { return generationLo; }
+
+        @Override public void serialize(PacketWriter writer) {
+            validate();
+            writer.writeUInt32(sessionId);
+            writer.writeString(mappingPath);
+            writer.writeUInt64(generationHi);
+            writer.writeUInt64(generationLo);
+        }
+
+        public static StartStreamMessage deserialize(PacketReader reader) throws ProtocolException {
+            StartStreamMessage message = new StartStreamMessage();
+            message.sessionId = reader.readUInt32();
+            message.mappingPath = reader.readString();
+            message.generationHi = reader.readUInt64();
+            message.generationLo = reader.readUInt64();
+            try {
+                message.validate();
+            } catch (IllegalArgumentException invalid) {
+                throw new ProtocolException.ValidationException(invalid.getMessage());
+            }
+            return message;
+        }
+
+        private void validate() {
+            if (sessionId <= 0 || sessionId > 0xffffffffL) throw new IllegalArgumentException("START_STREAM SessionId must be non-zero uint32");
+            if (mappingPath == null || mappingPath.equals("/") || !mappingPath.startsWith("/") ||
+                    mappingPath.contains("\\") || mappingPath.contains("//") || mappingPath.endsWith("/") || mappingPath.indexOf('\0') >= 0)
+                throw new IllegalArgumentException("START_STREAM MappingPath must be a normalized Linux file path");
+            for (String segment : mappingPath.split("/", -1))
+                if (segment.equals(".") || segment.equals("..")) throw new IllegalArgumentException("START_STREAM MappingPath must be normalized");
+            if (generationHi == 0 && generationLo == 0) throw new IllegalArgumentException("START_STREAM generation must be non-zero");
+        }
+    }
+
     public static class FrameMetadataMessage implements Message {
         private long bufferId;
         private long width;

@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0.0  
 **Protocol Version:** 1  
-**Status:** Canonical wire format implemented (Milestone 2); TCP control runtime added for Milestone 3
+**Status:** Canonical wire format implemented; TCP control runtime and START_STREAM mapping identity are integrated (Milestones 3–5).
 
 ---
 
@@ -10,7 +10,7 @@
 
 1. **Binary & Deterministic:** All multi-byte integer and floating-point primitives are encoded in **Little-Endian** byte order (IEEE 754 for floats).
 2. **Platform & Language Independent:** Compatible between C# (.NET / Mono) and Java (OpenJDK 21 / JVM) running on Linux and Windows/Wine.
-3. **No Pointers:** Memory addresses and pointers are never transmitted over the control channel. Shared-memory buffers are referenced strictly via integer buffer IDs, offsets, and sequence counters.
+3. **No Process Pointers:** Memory addresses and process-local pointers are never transmitted. A shared mapping is identified once by the `START_STREAM` Linux file path, session ID, and generation; frame slots are then selected locally by slot index and sequence.
 4. **Bounded Payloads:** All strings and variable-length collections are explicitly bounded to prevent buffer exhaustion and malformed allocation attacks.
 5. **Fail-Safe Version Negotiation:** The protocol header includes a protocol version. Implementations must reject incompatible versions gracefully.
 
@@ -79,7 +79,7 @@ Strings are serialized as:
 Sent by the connecting party upon establishing control channel:
 * `ProtocolVersion` (`uint16`): Sender's expected protocol version (must match host).
 * `ClientName` (`string`): Human-readable identifier (e.g., `"MinecraftFabricMod"`).
-* `ClientVersion` (`string`): e.g., `"1.21.1-fabric-0.19.3"`.
+* `ClientVersion` (`string`): e.g., `"1.21.1-fabric-0.16.5"`.
 * `Capabilities` (`uint32`): Capability bitmask flags (e.g. `CAP_FRAME_STREAM = 0x01`, `CAP_INPUT = 0x02`, `CAP_CAMERA = 0x04`).
 
 ### 4.3 HELLO_ACK (`Type = 2`)
@@ -92,7 +92,19 @@ Sent in response to HELLO:
 ### 4.4 PING (`Type = 3`) & PONG (`Type = 4`)
 * `TimestampNs` (`uint64`): Nanosecond or millisecond timestamp (Little-Endian `uint64`).
 
-### 4.5 FRAME_METADATA (`Type = 8`)
+### 4.5 START_STREAM (`Type = 6`)
+Sent by the host after creating and fully initializing a new shared framebuffer mapping. This message advertises mapping identity; it does not grant or transfer ownership of any slot.
+
+| Order | Field | Type | Description |
+| :--- | :--- | :--- | :--- |
+| 1 | `SessionId` | `uint32` | Must be non-zero and must match the `SessionId` received in this connection's `HELLO_ACK`. |
+| 2 | `MappingPath` | `string` | UTF-8 Linux absolute path to the shared mapping file. It must be normalized (no `.` or `..` path segments), contain no backslashes, and be non-empty. The host performs Wine path translation locally; the wire value remains the Linux path. |
+| 3 | `GenerationHi` | `uint64` | High 64 bits of the mapping's immutable 128-bit generation. |
+| 4 | `GenerationLo` | `uint64` | Low 64 bits of the mapping's immutable 128-bit generation. Both generation halves must not be zero. |
+
+Serialization order is exactly the table order, using the canonical little-endian primitives and the standard `uint16`-length-prefixed UTF-8 string encoding. The receiver must reject trailing payload bytes, require the session ID to match its `HELLO_ACK`, open the advertised file, validate the complete mapping header and size, and compare the header's session ID and both generation halves before any data-plane access. A failed check closes the mapping and fails the control session; it never authorizes slot reclamation. The host sends this message only after the mapping header and all slots have been initialized.
+
+### 4.6 FRAME_METADATA (`Type = 8`)
 * `BufferId` (`uint32`): Index of the triple-buffer ready for reading (`0`, `1`, or `2`).
 * `Width` (`uint32`): Framebuffer width in pixels.
 * `Height` (`uint32`): Framebuffer height in pixels.
@@ -139,11 +151,11 @@ The host control endpoint listens on loopback TCP port `47653`. Each direction u
 
 The host requires HELLO as the first client frame. It validates the header and HELLO payload protocol versions, then returns HELLO_ACK with a nonzero randomly generated `SessionId` for a successful connection. A rejected payload version receives a nonzero status, the supported version, session ID `0`, and an error string. IDs are not reused during one host server lifetime. The client retains the ID as control-session metadata. It is not included in later canonical headers or payloads and does not fence stale access to a shared mapping.
 
-PING is answered with PONG carrying the same timestamp. SHUTDOWN is a one-way notice; the receiver closes that connection. A peer disconnect, malformed frame, unsupported header version, idle receive timeout, or server shutdown closes the connection and releases its socket/session resources. The Milestone 3 endpoint handles HELLO, PING, PONG, ERROR, and SHUTDOWN; other already-defined message types remain canonical but are not yet application-handled by this endpoint.
+PING is answered with PONG carrying the same timestamp. SHUTDOWN is a one-way notice; the receiver closes that connection. A peer disconnect, malformed frame, unsupported header version, idle receive timeout, or server shutdown closes the connection and releases its socket/session resources. The host endpoint handles HELLO, PING, PONG, ERROR, and SHUTDOWN, and advertises an initialized framebuffer mapping with START_STREAM after a session is established. Other already-defined message types remain canonical but are not yet application-handled by this endpoint.
 
-This endpoint uses canonical `ERROR` payloads for well-formed but unsupported types: error code `1` means unknown message type and code `2` means a known type is not handled by this Milestone 3 endpoint. These are endpoint-local code values within the existing canonical `ErrorCode` field; they add no message type or payload field.
+This endpoint uses canonical `ERROR` payloads for well-formed but unsupported types: error code `1` means unknown message type and code `2` means a known type is not handled by the current control endpoint. These are endpoint-local code values within the existing canonical `ErrorCode` field; they add no message type or payload field.
 
-The TCP connection lifecycle is independent of shared-memory buffer ownership. Triple-buffer state, local synchronization, and data-plane recovery are deferred to the framebuffer milestone. A new HELLO/HELLO_ACK session ID alone is not a shared-memory fencing or reclamation mechanism.
+The TCP connection lifecycle is independent of shared-memory buffer ownership. START_STREAM binds a new mapping path and immutable generation to the negotiated session; it does not transfer slot ownership. On disconnect the host abandons and removes that session's mapping after closing its handles. The guest reconnects with bounded exponential backoff; the host issues a fresh session ID and mapping generation. Neither side reclaims WRITING/READING slots in an abandoned mapping. A new HELLO/HELLO_ACK session ID alone is not a shared-memory fencing or reclamation mechanism.
 
 ## 6. Error Handling & Validation Rules
 

@@ -11,6 +11,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +25,9 @@ final class TestServer implements AutoCloseable {
     private volatile Messages.HelloMessage hello;
     private volatile boolean sawPing;
     private volatile boolean sawShutdown;
+    private volatile Path mappingPath;
+    private volatile SharedFramebuffer mapping;
+    private int hostSequence = 1;
 
     TestServer() throws IOException {
         server = new ServerSocket(47653);
@@ -39,7 +44,12 @@ final class TestServer implements AutoCloseable {
             hello = Messages.HelloMessage.deserialize(new PacketReader(packet.payload));
             PacketWriter ack = new PacketWriter();
             new Messages.HelloAckMessage(0, ProtocolConstants.CURRENT_VERSION, 12345, "").serialize(ack);
-            socket.getOutputStream().write(ack.buildPacket(MessageType.HELLO_ACK, 0));
+            socket.getOutputStream().write(ack.buildPacket(MessageType.HELLO_ACK, hostSequence++));
+            mappingPath = Path.of(System.getProperty("java.io.tmpdir"), "mcb-test-" + System.nanoTime() + ".shm");
+            mapping = SharedFramebuffer.create(mappingPath, 12345);
+            PacketWriter start = new PacketWriter();
+            new Messages.StartStreamMessage(12345, mappingPath.toString(), mapping.generationHi(), mapping.generationLo()).serialize(start);
+            socket.getOutputStream().write(start.buildPacket(MessageType.START_STREAM, hostSequence++));
             while (!socket.isClosed()) {
                 packet = readPacket(input);
                 if (packet.header.getType() == MessageType.PING) {
@@ -47,7 +57,7 @@ final class TestServer implements AutoCloseable {
                     Messages.PingMessage ping = Messages.PingMessage.deserialize(new PacketReader(packet.payload));
                     PacketWriter pong = new PacketWriter();
                     new Messages.PongMessage(ping.getTimestampNs()).serialize(pong);
-                    socket.getOutputStream().write(pong.buildPacket(MessageType.PONG, packet.header.getSequenceId()));
+                    socket.getOutputStream().write(pong.buildPacket(MessageType.PONG, hostSequence++));
                 } else if (packet.header.getType() == MessageType.SHUTDOWN) {
                     Messages.ShutdownMessage shutdown = Messages.ShutdownMessage.deserialize(new PacketReader(packet.payload));
                     if (shutdown.getReasonCode() != 0 || !"Minecraft client stopping".equals(shutdown.getReasonText())) {
@@ -58,6 +68,7 @@ final class TestServer implements AutoCloseable {
                 }
             }
         } catch (Throwable failure) {
+            failure.printStackTrace();
             if (!server.isClosed()) failures.offer(failure);
         }
     }
@@ -84,6 +95,8 @@ final class TestServer implements AutoCloseable {
     @Override public void close() throws Exception {
         server.close();
         thread.join(2000);
+        if (mapping != null) mapping.close();
+        if (mappingPath != null) Files.deleteIfExists(mappingPath);
     }
 
     private record Packet(MessageHeader header, byte[] payload) {}
