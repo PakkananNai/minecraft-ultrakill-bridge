@@ -72,6 +72,10 @@ The full message set, payload layouts, and validation rules are defined in `docs
 | **M3 — Canonical TCP Protocol** | ✅ Complete | HELLO/HELLO_ACK, PING/PONG, SHUTDOWN lifecycle over canonical MCUB framing. |
 | **M4 — Fabric Guest Control Integration** | ✅ Complete | Fabric mod connects, completes the handshake, and validates START_STREAM mapping identity. |
 | **M5 — Shared-Memory Framebuffer** | ✅ Complete | Canonical Java/C# triple buffer, START_STREAM identity, and asynchronous BGRA8 PBO capture are implemented and runtime-verified in Minecraft 1.21.1 at multiple resolutions, including reconnect. |
+| **M6 — Unity Framebuffer Presentation** | ✅ Complete | Unity host presentation consumes the shared BGRA8 framebuffer and presents it through the ULTRAKILL runtime; live host/guest integration was verified. |
+| **M7 — Input Synchronization** | ✅ Complete | Unity Input System capture, F8 focus switching, keyboard/mouse/wheel forwarding, client-thread guest application, and held-input release were verified in the combined Wayland runtime. |
+
+**Latest milestone:** M7 is complete. Runtime evidence is recorded in `docs/milestone7_report.md`.
 
 **Repository integrity:** The omitted host protocol sources were restored in commit `08535a2`; CI passed.
 
@@ -113,3 +117,4 @@ M3 validation: run `KEEP_LOGS=1 tools/tcp_protocol_validation/run.sh`. This suit
 * `docs/protocol.md` — canonical MCUB wire protocol and validation rules.
 * `docs/roadmap.md` — milestone tracking and implementation status.
 * `docs/milestone3_architecture_analysis.md` — analysis of synchronization design candidates.
+* `docs/milestone7_report.md` — M7 input synchronization implementation and runtime evidence.
