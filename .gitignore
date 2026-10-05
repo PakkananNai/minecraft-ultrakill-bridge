@@ -47,3 +47,9 @@ Mods/
 .DS_Store
 Thumbs.db
 .aider*
+
+# Local runtime/test artifacts
+**/run/
+**/run-server/
+tools/cross_lang_test/csharp_packets/*.bin
+tools/cross_lang_test/java_packets/

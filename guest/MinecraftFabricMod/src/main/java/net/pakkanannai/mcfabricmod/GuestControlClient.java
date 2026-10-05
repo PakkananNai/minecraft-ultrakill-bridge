@@ -44,6 +44,9 @@ public final class GuestControlClient implements AutoCloseable {
     private volatile SharedFramebuffer activeFramebuffer;
     private int sequence;
     private int expectedReceiveSequence = 1;
+    private GuestInputBridge inputBridge;
+
+    void setInputBridge(GuestInputBridge inputBridge) { this.inputBridge = inputBridge; }
 
     public void start() {
         if (!started.compareAndSet(false, true)) return;
@@ -87,7 +90,19 @@ public final class GuestControlClient implements AutoCloseable {
                     MessageHeader header = readHeader(input);
                     requireReceiveSequence(header);
                     byte[] payload = readPayload(input, header.getPayloadLength());
-                    if (header.getType() == MessageType.START_STREAM) {
+                    if (header.getType() == MessageType.INPUT_EVENT) {
+                        PacketReader reader = new PacketReader(payload);
+                        Messages.InputEventMessage event = Messages.InputEventMessage.deserialize(reader);
+                        if (reader.getRemaining() != 0) throw new ProtocolException.ValidationException("Unexpected INPUT_EVENT trailing bytes");
+                        GuestInputBridge bridge = inputBridge;
+                        if (bridge != null) bridge.enqueueInput(event.getEventType(), event.getKeyCode(), event.getMouseDx(), event.getMouseDy(), event.getWheelDelta());
+                    } else if (header.getType() == MessageType.INPUT_FOCUS) {
+                        PacketReader reader = new PacketReader(payload);
+                        Messages.InputFocusMessage focus = Messages.InputFocusMessage.deserialize(reader);
+                        if (reader.getRemaining() != 0) throw new ProtocolException.ValidationException("Unexpected INPUT_FOCUS trailing bytes");
+                        GuestInputBridge bridge = inputBridge;
+                        if (bridge != null) bridge.enqueueFocus(focus.isHasFocus(), focus.isReleaseHeldKeys());
+                    } else if (header.getType() == MessageType.START_STREAM) {
                         PacketReader reader = new PacketReader(payload);
                         Messages.StartStreamMessage start = Messages.StartStreamMessage.deserialize(reader);
                         if (reader.getRemaining() != 0)

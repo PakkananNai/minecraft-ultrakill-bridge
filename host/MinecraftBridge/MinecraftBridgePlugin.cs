@@ -37,7 +37,9 @@ namespace MinecraftBridge
         private int _renderedFrames;
         private float _nextRenderLogTime;
         private bool _capturedM6Screenshot;
+        private InputBridge _inputBridge;
         private readonly Dictionary<uint, Tuple<SharedFramebuffer, string, string>> _mappings = new Dictionary<uint, Tuple<SharedFramebuffer, string, string>>();
+        private readonly Dictionary<uint, TcpControlServer.ControlSession> _sessions = new Dictionary<uint, TcpControlServer.ControlSession>();
         private ConfigEntry<string> _linuxSharedDirectory;
         private ConfigEntry<string> _wineSharedDirectory;
 
@@ -71,6 +73,7 @@ namespace MinecraftBridge
                 _controlServer.SessionClosed += OnControlSessionClosed;
                 _controlServer.Start();
                 CreateMinecraftSurface();
+                _inputBridge = new InputBridge(message => Log.LogInfo(message));
             }
             catch (System.Exception ex)
             {
@@ -96,7 +99,12 @@ namespace MinecraftBridge
             {
                 mapping = SharedFramebuffer.CreateNew(winePath, session.SessionId);
                 if (mapping.SessionId != session.SessionId) throw new InvalidDataException("Created mapping session ID mismatch");
-                lock (_mappingGate) _mappings.Add(session.SessionId, Tuple.Create(mapping, advertisedPath, winePath));
+                lock (_mappingGate)
+                {
+                    _mappings.Add(session.SessionId, Tuple.Create(mapping, advertisedPath, winePath));
+                    _sessions[session.SessionId] = session;
+                }
+                _inputBridge?.SetSession(session);
                 session.Send(new StartStreamMessage
                 {
                     SessionId = session.SessionId,
@@ -122,6 +130,9 @@ namespace MinecraftBridge
             lock (_mappingGate)
             {
                 if (_mappings.TryGetValue(sessionId, out entry)) _mappings.Remove(sessionId);
+                TcpControlServer.ControlSession session;
+                if (_sessions.TryGetValue(sessionId, out session)) _sessions.Remove(sessionId);
+                _inputBridge?.ClearSession(session);
             }
             if (entry == null) return;
             try { entry.Item1.Dispose(); }
@@ -157,6 +168,7 @@ namespace MinecraftBridge
 
         private void Update()
         {
+            _inputBridge?.Tick();
             if (_mappings.Count == 0) return;
 
             Tuple<SharedFramebuffer, string, string> entry = null;
@@ -248,6 +260,8 @@ namespace MinecraftBridge
         private void OnDestroy()
         {
             Log?.LogInfo($"{PluginName} shutting down safely.");
+            _inputBridge?.Dispose();
+            _inputBridge = null;
             _controlServer?.Dispose();
             _controlServer = null;
             if (_minecraftTexture != null) { Destroy(_minecraftTexture); _minecraftTexture = null; }

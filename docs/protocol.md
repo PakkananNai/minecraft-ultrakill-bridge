@@ -163,3 +163,9 @@ The TCP connection lifecycle is independent of shared-memory buffer ownership. S
 2. **Payload Bounds:** If `PayloadLength > 65536`, the reader must reject the packet with `ERR_PAYLOAD_TOO_LARGE` without allocating memory.
 3. **Truncated Packets:** Deserializers must check buffer boundaries before reading any primitive. Reading past end-of-payload must throw `ProtocolTruncatedException` rather than returning uninitialized data.
 4. **Unsupported Message Types:** An unknown message type must be handled gracefully (logged with warning and ignored, or returned with an `ERROR` response) without terminating the connection unless the header itself is unparseable.
+
+### Milestone 7 Input semantics
+
+`INPUT_EVENT` is host-to-guest only. Keyboard `KeyCode` values use GLFW key constants; mouse button events use `KeyCode = 0/1/2` for left/right/middle. `MOUSE_MOVE_RELATIVE` carries signed pixel deltas in `MouseDx`/`MouseDy`; `MOUSE_WHEEL` carries signed vertical wheel units in `WheelDelta`.
+
+`INPUT_FOCUS` is host-to-guest only. `HasFocus=false` requests immediate release of all guest-held keys/buttons when `ReleaseHeldKeys=true`. The guest applies queued input only on its Minecraft client thread.

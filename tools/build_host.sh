@@ -26,6 +26,7 @@ for dll in "$BEPINEX_CORE/BepInEx.Core.dll" \
            "$MANAGED_DIR/UnityEngine.CoreModule.dll" \
            "$MANAGED_DIR/UnityEngine.UIModule.dll" \
            "$MANAGED_DIR/UnityEngine.ScreenCaptureModule.dll" \
+           "$MANAGED_DIR/Unity.InputSystem.dll" \
            "$MANAGED_DIR/UnityEngine.UI.dll" \
            "$MANAGED_DIR/UnityEngine.dll"; do
     if [ ! -f "$dll" ]; then
@@ -76,6 +77,7 @@ wine "$WINE_MCS" \
     -r:"$MANAGED_W\\UnityEngine.CoreModule.dll" \
     -r:"$MANAGED_W\\UnityEngine.UIModule.dll" \
     -r:"$MANAGED_W\\UnityEngine.ScreenCaptureModule.dll" \
+    -r:"$MANAGED_W\\Unity.InputSystem.dll" \
     -r:"$MANAGED_W\\UnityEngine.UI.dll" \
     -r:"$MANAGED_W\\UnityEngine.dll" \
     "${W_SOURCES[@]}"

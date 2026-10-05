@@ -45,6 +45,10 @@
       <HintPath>$(ManagedDir)/UnityEngine.ScreenCaptureModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Unity.InputSystem">
+      <HintPath>$(ManagedDir)/Unity.InputSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>$(ManagedDir)/UnityEngine.UI.dll</HintPath>
       <Private>false</Private>

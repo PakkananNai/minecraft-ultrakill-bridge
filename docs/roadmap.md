@@ -15,7 +15,7 @@ This roadmap tracks the development progress of the **Minecraft × ULTRAKILL Bri
 | **4** | **Minecraft Guest Mod** | ✅ **Done** | Fabric 1.21.1 client mod connects to control channel, completes handshake, and validates advertised shared mapping identity. |
 | **5** | **Framebuffer Capture** | ✅ **Complete** | Canonical triple-buffer, START_STREAM identity, asynchronous BGRA8 PBO capture, cross-process stress, and live Minecraft 1.21.1 validation passed. |
 | **6** | **Host Rendering** | ✅ **Complete** | Live Minecraft 1.21.1 → shared framebuffer → Unity Texture2D/RawImage presentation verified under ULTRAKILL/Wine; repeated `M6_FRAME_PRESENTED` frames and an independently inspectable screenshot artifact were captured. |
-| **7** | **Input Integration** | 📋 Planned | Keyboard/mouse forwarding with F8 focus switcher and stuck-key prevention. |
+| **7** | **Input Integration** | ✅ **Complete** | Unity Input System capture, F8 focus switching, canonical input forwarding, client-thread guest application, and held-input release verified in the combined GUI runtime. |
 | **8** | **Camera Synchronization** | 📋 Planned | Coordinate system mapping and camera transform synchronization. |
 | **9** | **Block Interaction & Collision**| 📋 Planned | Block raycasts, placement, and breaking. |
 | **10** | **Entity Synchronization** | 📋 Planned | Lightweight entity metadata discovery and positioning. |
@@ -70,7 +70,7 @@ Evidence logs: `tools/tcp_protocol_validation/logs/20261004T114700Z-425212/` (`K
 
 M5 runtime evidence: 267 live frames were observed at 1366x700 with final sequence 267, 3,824,800-byte payloads, stride 5,464, BGRA8 format, and non-zero checksums. A prior 854x480 run produced 33+ live frames. The reconnect run produced 9 frames on each of two fresh mappings. Unity host presentation is now the active M6 work; full-resolution 3840x2160 GPU throughput is not claimed because the development display is not 4K.
 
-### Milestone 6 — Host Rendering 🚧 In Progress / BLOCKED
+### Milestone 6 — Host Rendering ✅ Complete
 - [x] Add C# latest-frame consumer helper that acquires, validates, reads, and releases one READY slot.
 - [x] Create a Unity `Texture2D` using `TextureFormat.BGRA32` with no mipmaps and update it with `LoadRawTextureData` + `Apply(false, false)`.
 - [x] Create a full-screen `ScreenSpaceOverlay` `RawImage` presentation surface with a high sorting order and raycast disabled.
@@ -81,3 +81,17 @@ M5 runtime evidence: 267 live frames were observed at 1366x700 with final sequen
 - [x] Visually verify the Minecraft frame is displayed in the final ULTRAKILL render output and preserve a screenshot artifact.
 
 **M6 evidence:** Live Minecraft 1.21.1 connected to the ULTRAKILL host, validated the advertised shared framebuffer, and drove repeated `M6_FRAME_PRESENTED` updates into an 854x480 Unity `Texture2D`/`RawImage`. The host diagnostic produced `m6_frame_presented.png` after frame 100; the PNG was independently read back from the game directory and copied to `docs/evidence/m6_frame_presented.png`. M6 is complete; the screenshot is retained as the visual evidence artifact.
+
+### Milestone 7 — Input Integration ✅ Complete
+- [x] Add host-side Unity Input System keyboard/mouse capture.
+- [x] Add F8 guest-focus switcher.
+- [x] Forward keyboard press/release, relative mouse motion, mouse buttons, and wheel through canonical `INPUT_EVENT` / `INPUT_FOCUS` messages.
+- [x] Queue guest input on the TCP thread and apply it on the Minecraft client thread.
+- [x] Release tracked guest keys/buttons whenever focus is withdrawn.
+- [x] Suppress enabled ULTRAKILL Input System actions while guest focus is active and restore the exact actions captured before focus.
+- [x] Runtime-test F8 focus switching, keyboard/mouse forwarding, and stuck-key recovery in the combined ULTRAKILL + Minecraft session.
+- [x] Runtime-test that ULTRAKILL gameplay input is actually suppressed while guest focus is active.
+
+### Milestone 7 runtime evidence / completion
+
+The final combined Wayland runtime used session `2733717925` with the actual ULTRAKILL BepInEx host and Minecraft 1.21.1 Fabric guest. The guest validated the shared framebuffer identity and remained connected while M7 input was exercised. Host logs verified F8 focus acquisition, relative mouse movement, keyboard W down/up, left mouse down/up, and wheel transmission. Guest logs verified focus acquisition and application of relative mouse movement, W down/up, and left mouse down/up on the Minecraft render thread. Repeated F8 injection produced reversible host focus transitions including focus loss with held-input release. M7 is complete; see `docs/milestone7_report.md` for the evidence matrix.
