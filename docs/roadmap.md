@@ -14,7 +14,7 @@ This roadmap tracks the development progress of the **Minecraft × ULTRAKILL Bri
 | **3** | **Interprocess Communication** | ✅ **Implemented** | File-backed mapping lifecycle plus canonical 16-byte TCP control, handshake/session negotiation, ping/pong, shutdown, cross-language and socket validation. No ring buffer claim. |
 | **4** | **Minecraft Guest Mod** | ✅ **Done** | Fabric 1.21.1 client mod connects to control channel, completes handshake, and validates advertised shared mapping identity. |
 | **5** | **Framebuffer Capture** | ✅ **Complete** | Canonical triple-buffer, START_STREAM identity, asynchronous BGRA8 PBO capture, cross-process stress, and live Minecraft 1.21.1 validation passed. |
-| **6** | **Host Rendering** | 🚧 **In Progress / BLOCKED** | Unity Texture2D + full-screen RawImage consumer is implemented and host build/runtime surface creation is verified; combined Minecraft→ULTRAKILL frame presentation is not yet verified because the current ULTRAKILL/Wine run terminates before a stable TCP session remains available. |
+| **6** | **Host Rendering** | ✅ **Complete** | Live Minecraft 1.21.1 → shared framebuffer → Unity Texture2D/RawImage presentation verified under ULTRAKILL/Wine; repeated `M6_FRAME_PRESENTED` frames and an independently inspectable screenshot artifact were captured. |
 | **7** | **Input Integration** | 📋 Planned | Keyboard/mouse forwarding with F8 focus switcher and stuck-key prevention. |
 | **8** | **Camera Synchronization** | 📋 Planned | Coordinate system mapping and camera transform synchronization. |
 | **9** | **Block Interaction & Collision**| 📋 Planned | Block raycasts, placement, and breaking. |
@@ -77,7 +77,7 @@ M5 runtime evidence: 267 live frames were observed at 1366x700 with final sequen
 - [x] Add resize handling by recreating the texture when framebuffer dimensions change.
 - [x] Build the host plugin against the actual Unity UI/UIModule assemblies and deploy it to the installed ULTRAKILL BepInEx environment.
 - [x] Verify ULTRAKILL loads the updated plugin and logs `M6_RENDER_SURFACE_CREATED` under Wine with the Intel HD 620 D3D11 backend.
-- [ ] Verify a live Minecraft 1.21.1 connection remains established to the running ULTRAKILL host and produces `M6_FRAME_PRESENTED` logs.
-- [ ] Visually verify the Minecraft frame is displayed inside the ULTRAKILL render output.
+- [x] Verify a live Minecraft 1.21.1 connection to the running ULTRAKILL host and observe repeated `M6_FRAME_PRESENTED` logs.
+- [x] Visually verify the Minecraft frame is displayed in the final ULTRAKILL render output and preserve a screenshot artifact.
 
-**Current M6 blocker:** The host surface itself initializes successfully, but the current combined Wine ULTRAKILL runtime terminates before the Minecraft guest can maintain the control session. The observed Minecraft side subsequently reports `Connection refused`. The failure is not currently attributed to the new texture upload path because no `M6_FRAME_PRESENTED` call was reached. Further investigation must isolate the ULTRAKILL runtime termination before M6 can be marked PASS.
+**M6 evidence:** Live Minecraft 1.21.1 connected to the ULTRAKILL host, validated the advertised shared framebuffer, and drove repeated `M6_FRAME_PRESENTED` updates into an 854x480 Unity `Texture2D`/`RawImage`. The host diagnostic produced `m6_frame_presented.png` after frame 100; the PNG was independently read back from the game directory and copied to `docs/evidence/m6_frame_presented.png`. M6 is complete; the screenshot is retained as the visual evidence artifact.

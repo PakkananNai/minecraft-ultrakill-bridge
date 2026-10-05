@@ -2,6 +2,7 @@ package net.pakkanannai.mcfabricmod;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import org.slf4j.Logger;
@@ -18,6 +19,10 @@ public final class MinecraftBridgeMod implements ClientModInitializer {
         controlClient.start();
         HudRenderCallback.EVENT.register((drawContext, tickCounter) ->
                 framebufferCapture.capture(MinecraftClient.getInstance()));
+        if (Boolean.getBoolean("minecraft.ultrakill.bridge.captureWithoutWorld")) {
+            ClientTickEvents.END_CLIENT_TICK.register(client -> framebufferCapture.capture(client));
+            LOGGER.info("Diagnostic framebuffer capture tick hook enabled");
+        }
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
             LOGGER.info("Stopping Minecraft bridge framebuffer capture");
             framebufferCapture.close();

@@ -98,8 +98,7 @@ public final class MinecraftFramebufferCapture implements AutoCloseable {
             previousPackSkipRows = GL11.glGetInteger(GL11.GL_PACK_SKIP_ROWS);
             previousPackSkipPixels = GL11.glGetInteger(GL11.GL_PACK_SKIP_PIXELS);
             stateCaptured = true;
-            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, framebuffer.fbo);
-            GL11.glReadBuffer(GL30.GL_COLOR_ATTACHMENT0);
+            framebuffer.beginRead();
             GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, pbo.id);
             if (pbo.allocatedBytes != byteCount) {
                 GL15.glBufferData(GL21.GL_PIXEL_PACK_BUFFER, byteCount, GL15.GL_STREAM_READ);
@@ -124,6 +123,7 @@ public final class MinecraftFramebufferCapture implements AutoCloseable {
         } finally {
             try {
                 if (stateCaptured) {
+                    framebuffer.endRead();
                     GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, previousPackBuffer);
                     GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, previousPackAlignment);
                     GL11.glPixelStorei(GL11.GL_PACK_ROW_LENGTH, previousPackRowLength);

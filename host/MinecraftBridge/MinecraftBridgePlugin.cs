@@ -5,6 +5,7 @@ using BepInEx.Unity.Mono;
 using MinecraftBridge.Protocol;
 using MinecraftBridge.Framebuffer;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -35,6 +36,7 @@ namespace MinecraftBridge
         private int _lastRenderedHeight;
         private int _renderedFrames;
         private float _nextRenderLogTime;
+        private bool _capturedM6Screenshot;
         private readonly Dictionary<uint, Tuple<SharedFramebuffer, string, string>> _mappings = new Dictionary<uint, Tuple<SharedFramebuffer, string, string>>();
         private ConfigEntry<string> _linuxSharedDirectory;
         private ConfigEntry<string> _wineSharedDirectory;
@@ -185,6 +187,13 @@ namespace MinecraftBridge
                     _lastRenderedWidth = metadata.Width;
                     _lastRenderedHeight = metadata.Height;
                     _renderedFrames++;
+                    if (!_capturedM6Screenshot && _renderedFrames >= 100)
+                    {
+                        string screenshotPath = Path.Combine(Paths.GameRootPath, "m6_frame_presented.png");
+                        StartCoroutine(CaptureM6ScreenshotAfterFrame(screenshotPath));
+                        _capturedM6Screenshot = true;
+                        Log.LogInfo("M6_SCREENSHOT_REQUESTED path=" + screenshotPath);
+                    }
                 }
 
                 if (Time.unscaledTime >= _nextRenderLogTime)
@@ -199,6 +208,13 @@ namespace MinecraftBridge
             {
                 Log.LogError("M6_FRAME_PRESENT_FAILED: " + ex);
             }
+        }
+
+        private IEnumerator CaptureM6ScreenshotAfterFrame(string path)
+        {
+            yield return new WaitForEndOfFrame();
+            ScreenCapture.CaptureScreenshot(path);
+            Log.LogInfo("M6_SCREENSHOT_CAPTURED path=" + path);
         }
 
         private void EnsureMinecraftTexture(int width, int height)
