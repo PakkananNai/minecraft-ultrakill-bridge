@@ -285,6 +285,77 @@ namespace MinecraftBridge.Protocol
         }
     }
 
+    public sealed class RaycastRequestMessage : IMessage
+    {
+        public MessageType MessageType => MessageType.RaycastRequest;
+        public ulong RequestId { get; set; }
+        public float MaxDistance { get; set; }
+
+        public void Serialize(PacketWriter writer)
+        {
+            writer.WriteUInt64(RequestId);
+            writer.WriteFloat(MaxDistance);
+        }
+
+        public static RaycastRequestMessage Deserialize(PacketReader reader)
+        {
+            return new RaycastRequestMessage
+            {
+                RequestId = reader.ReadUInt64(),
+                MaxDistance = reader.ReadFloat()
+            };
+        }
+    }
+
+    public sealed class RaycastResponseMessage : IMessage
+    {
+        public MessageType MessageType => MessageType.RaycastResponse;
+        public ulong RequestId { get; set; }
+        public bool Hit { get; set; }
+        public int BlockX { get; set; }
+        public int BlockY { get; set; }
+        public int BlockZ { get; set; }
+        public byte Side { get; set; }
+        public double HitX { get; set; }
+        public double HitY { get; set; }
+        public double HitZ { get; set; }
+        public float Distance { get; set; }
+        public string BlockId { get; set; } = string.Empty;
+
+        public void Serialize(PacketWriter writer)
+        {
+            writer.WriteUInt64(RequestId);
+            writer.WriteBoolean(Hit);
+            writer.WriteInt32(BlockX);
+            writer.WriteInt32(BlockY);
+            writer.WriteInt32(BlockZ);
+            writer.WriteUInt8(Side);
+            writer.WriteDouble(HitX);
+            writer.WriteDouble(HitY);
+            writer.WriteDouble(HitZ);
+            writer.WriteFloat(Distance);
+            writer.WriteString(BlockId);
+        }
+
+        public static RaycastResponseMessage Deserialize(PacketReader reader)
+        {
+            return new RaycastResponseMessage
+            {
+                RequestId = reader.ReadUInt64(),
+                Hit = reader.ReadBoolean(),
+                BlockX = reader.ReadInt32(),
+                BlockY = reader.ReadInt32(),
+                BlockZ = reader.ReadInt32(),
+                Side = reader.ReadUInt8(),
+                HitX = reader.ReadDouble(),
+                HitY = reader.ReadDouble(),
+                HitZ = reader.ReadDouble(),
+                Distance = reader.ReadFloat(),
+                BlockId = reader.ReadString()
+            };
+        }
+    }
+
     public class ErrorMessage : IMessage
     {
         public MessageType MessageType => MessageType.Error;

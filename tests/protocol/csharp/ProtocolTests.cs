@@ -38,6 +38,7 @@ namespace MinecraftBridge.Tests
             TestCameraStateRoundTrip();
             TestInputEventRoundTrip();
             TestInputFocusRoundTrip();
+            TestRaycastRoundTrip();
             TestErrorAndShutdownRoundTrip();
             TestTruncatedPacketThrows();
             TestStringBoundaryChecks();
@@ -299,6 +300,38 @@ namespace MinecraftBridge.Tests
                     InputFocusMessage deserialized = InputFocusMessage.Deserialize(reader);
                     Assert(deserialized.HasFocus == true, "InputFocus HasFocus is true");
                     Assert(deserialized.ReleaseHeldKeys == true, "InputFocus ReleaseHeldKeys is true");
+                }
+            }
+        }
+
+        private static void TestRaycastRoundTrip()
+        {
+            RaycastRequestMessage request = new RaycastRequestMessage { RequestId = 77, MaxDistance = 6.0f };
+            using (PacketWriter writer = new PacketWriter())
+            {
+                request.Serialize(writer);
+                using (PacketReader reader = new PacketReader(writer.ToPayloadArray()))
+                {
+                    RaycastRequestMessage decoded = RaycastRequestMessage.Deserialize(reader);
+                    Assert(decoded.RequestId == 77, "Raycast request id matches");
+                    Assert(Math.Abs(decoded.MaxDistance - 6.0f) < 0.0001f, "Raycast max distance matches");
+                }
+            }
+
+            RaycastResponseMessage response = new RaycastResponseMessage { RequestId = 77, Hit = true, BlockX = 12, BlockY = 73, BlockZ = 53,
+                Side = 1, HitX = 12.25, HitY = 73.5, HitZ = 53.0, Distance = 0.75f, BlockId = "minecraft:stone" };
+            using (PacketWriter writer = new PacketWriter())
+            {
+                response.Serialize(writer);
+                using (PacketReader reader = new PacketReader(writer.ToPayloadArray()))
+                {
+                    RaycastResponseMessage decoded = RaycastResponseMessage.Deserialize(reader);
+                    Assert(decoded.RequestId == 77, "Raycast response id matches");
+                    Assert(decoded.Hit, "Raycast hit flag matches");
+                    Assert(decoded.BlockX == 12 && decoded.BlockY == 73 && decoded.BlockZ == 53, "Raycast block position matches");
+                    Assert(decoded.Side == 1, "Raycast side matches");
+                    Assert(Math.Abs(decoded.HitX - 12.25) < 0.0001 && Math.Abs(decoded.Distance - 0.75f) < 0.0001f, "Raycast hit geometry matches");
+                    Assert(decoded.BlockId == "minecraft:stone", "Raycast block id matches");
                 }
             }
         }

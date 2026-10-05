@@ -39,6 +39,7 @@ namespace MinecraftBridge
         private bool _capturedM6Screenshot;
         private InputBridge _inputBridge;
         private CameraBridge _cameraBridge;
+        private RaycastBridge _raycastBridge;
         private readonly Dictionary<uint, Tuple<SharedFramebuffer, string, string>> _mappings = new Dictionary<uint, Tuple<SharedFramebuffer, string, string>>();
         private readonly Dictionary<uint, TcpControlServer.ControlSession> _sessions = new Dictionary<uint, TcpControlServer.ControlSession>();
         private ConfigEntry<string> _linuxSharedDirectory;
@@ -72,11 +73,13 @@ namespace MinecraftBridge
                 _controlServer = new TcpControlServer(IPAddress.Loopback, 47653, message => Log.LogInfo(message));
                 _controlServer.SessionEstablished += OnControlSessionEstablished;
                 _controlServer.CameraStateReceived += OnCameraStateReceived;
+                _controlServer.RaycastResponseReceived += OnRaycastResponseReceived;
                 _controlServer.SessionClosed += OnControlSessionClosed;
                 _controlServer.Start();
                 CreateMinecraftSurface();
                 _inputBridge = new InputBridge(message => Log.LogInfo(message));
                 _cameraBridge = new CameraBridge();
+                _raycastBridge = new RaycastBridge();
             }
             catch (System.Exception ex)
             {
@@ -84,6 +87,12 @@ namespace MinecraftBridge
                 _controlServer?.Dispose();
                 _controlServer = null;
             }
+        }
+
+        private void OnRaycastResponseReceived(TcpControlServer.ControlSession session, RaycastResponseMessage response)
+        {
+            Log?.LogInfo("M9_RAYCAST_RESPONSE_RECEIVED session=" + session.SessionId + " request=" + response.RequestId + " hit=" + response.Hit);
+            _raycastBridge?.OnResponse(session, response);
         }
 
         private void OnControlSessionEstablished(TcpControlServer.ControlSession session)
@@ -108,6 +117,7 @@ namespace MinecraftBridge
                     _sessions[session.SessionId] = session;
                 }
                 _inputBridge?.SetSession(session);
+                _raycastBridge?.SetSession(session);
                 session.Send(new StartStreamMessage
                 {
                     SessionId = session.SessionId,
@@ -143,6 +153,7 @@ namespace MinecraftBridge
                 TcpControlServer.ControlSession session;
                 if (_sessions.TryGetValue(sessionId, out session)) _sessions.Remove(sessionId);
                 _inputBridge?.ClearSession(session);
+                _raycastBridge?.ClearSession(session);
             }
             if (entry == null) return;
             try { entry.Item1.Dispose(); }
@@ -180,6 +191,7 @@ namespace MinecraftBridge
         {
             _inputBridge?.Tick();
             _cameraBridge?.Update();
+            _raycastBridge?.Tick();
             if (_mappings.Count == 0) return;
 
             Tuple<SharedFramebuffer, string, string> entry = null;

@@ -382,6 +382,72 @@ public final class Messages {
         }
     }
 
+    public static class RaycastRequestMessage implements Message {
+        private long requestId;
+        private float maxDistance;
+
+        public RaycastRequestMessage() {}
+        public RaycastRequestMessage(long requestId, float maxDistance) {
+            this.requestId = requestId;
+            this.maxDistance = maxDistance;
+        }
+
+        @Override public MessageType getMessageType() { return MessageType.RAYCAST_REQUEST; }
+        public long getRequestId() { return requestId; }
+        public float getMaxDistance() { return maxDistance; }
+
+        @Override public void serialize(PacketWriter writer) {
+            writer.writeUInt64(requestId);
+            writer.writeFloat(maxDistance);
+        }
+
+        public static RaycastRequestMessage deserialize(PacketReader reader) throws ProtocolException {
+            return new RaycastRequestMessage(reader.readUInt64(), reader.readFloat());
+        }
+    }
+
+    public static class RaycastResponseMessage implements Message {
+        private long requestId;
+        private boolean hit;
+        private int blockX, blockY, blockZ;
+        private int side;
+        private double hitX, hitY, hitZ;
+        private float distance;
+        private String blockId = "";
+
+        public RaycastResponseMessage() {}
+        public RaycastResponseMessage(long requestId, boolean hit, int blockX, int blockY, int blockZ,
+                                      int side, double hitX, double hitY, double hitZ, float distance, String blockId) {
+            this.requestId = requestId; this.hit = hit; this.blockX = blockX; this.blockY = blockY; this.blockZ = blockZ;
+            this.side = side; this.hitX = hitX; this.hitY = hitY; this.hitZ = hitZ; this.distance = distance; this.blockId = blockId;
+        }
+
+        @Override public MessageType getMessageType() { return MessageType.RAYCAST_RESPONSE; }
+        public long getRequestId() { return requestId; }
+        public boolean isHit() { return hit; }
+        public int getBlockX() { return blockX; }
+        public int getBlockY() { return blockY; }
+        public int getBlockZ() { return blockZ; }
+        public int getSide() { return side; }
+        public double getHitX() { return hitX; }
+        public double getHitY() { return hitY; }
+        public double getHitZ() { return hitZ; }
+        public float getDistance() { return distance; }
+        public String getBlockId() { return blockId; }
+
+        @Override public void serialize(PacketWriter writer) {
+            writer.writeUInt64(requestId); writer.writeBoolean(hit);
+            writer.writeInt32(blockX); writer.writeInt32(blockY); writer.writeInt32(blockZ); writer.writeUInt8(side);
+            writer.writeDouble(hitX); writer.writeDouble(hitY); writer.writeDouble(hitZ); writer.writeFloat(distance); writer.writeString(blockId);
+        }
+
+        public static RaycastResponseMessage deserialize(PacketReader reader) throws ProtocolException {
+            return new RaycastResponseMessage(reader.readUInt64(), reader.readBoolean(), reader.readInt32(), reader.readInt32(),
+                    reader.readInt32(), reader.readUInt8(), reader.readDouble(), reader.readDouble(), reader.readDouble(),
+                    reader.readFloat(), reader.readString());
+        }
+    }
+
     public static class ErrorMessage implements Message {
         private long errorCode;
         private String description = "";

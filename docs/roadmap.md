@@ -17,7 +17,7 @@ This roadmap tracks the development progress of the **Minecraft × ULTRAKILL Bri
 | **6** | **Host Rendering** | ✅ **Complete** | Live Minecraft 1.21.1 → shared framebuffer → Unity Texture2D/RawImage presentation verified under ULTRAKILL/Wine; repeated `M6_FRAME_PRESENTED` frames and an independently inspectable screenshot artifact were captured. |
 | **7** | **Input Integration** | ✅ **Complete** | Unity Input System capture, F8 focus switching, canonical input forwarding, client-thread guest application, and held-input release verified in the combined GUI runtime. |
 | **8** | **Camera Synchronization** | ✅ **Complete** | Guest camera sampling, canonical TCP synchronization, Minecraft→Unity coordinate/rotation mapping, scene-lifetime recovery, and live runtime application verified. |
-| **9** | **Block Interaction & Collision**| 📋 Planned | Block raycasts, placement, and breaking. |
+| **9** | **Block Interaction & Collision** | 🚧 **In Progress** | Canonical raycast request/response and Minecraft-authoritative targeting verified; break/place GUI evidence remains. |
 | **10** | **Entity Synchronization** | 📋 Planned | Lightweight entity metadata discovery and positioning. |
 | **11** | **Damage & Gameplay** | 📋 Planned | Bi-directional damage events and health synchronization. |
 | **12** | **Optimization & Stability** | 📋 Planned | Frame pacing, latency profiling, memory leak auditing, hardening. |
@@ -96,6 +96,20 @@ M5 runtime evidence: 267 live frames were observed at 1366x700 with final sequen
 
 The final combined Wayland runtime used session `2733717925` with the actual ULTRAKILL BepInEx host and Minecraft 1.21.1 Fabric guest. The guest validated the shared framebuffer identity and remained connected while M7 input was exercised. Host logs verified F8 focus acquisition, relative mouse movement, keyboard W down/up, left mouse down/up, and wheel transmission. Guest logs verified focus acquisition and application of relative mouse movement, W down/up, and left mouse down/up on the Minecraft render thread. Repeated F8 injection produced reversible host focus transitions including focus loss with held-input release. M7 is complete; see `docs/milestone7_report.md` for the evidence matrix.
 
+
+### Milestone 9 — Block Interaction & Collision 🚧 In Progress
+- [x] Define canonical `RAYCAST_REQUEST` (`Type = 12`) and `RAYCAST_RESPONSE` (`Type = 13`) payloads without changing the MCUB 16-byte header.
+- [x] Add C#/Java raycast message serialization/deserialization and 59/60 assertion protocol coverage.
+- [x] Add host raycast request scheduling and response handling on the existing control session.
+- [x] Add Minecraft client-thread raycast using the active camera entity and return block coordinates, face, hit position, distance, and registry ID.
+- [x] Wire the guest raycast bridge to the live `GuestControlClient` transport.
+- [x] Runtime-verify live Minecraft 1.21.1 → ULTRAKILL/Wine raycast traffic; 30-response checkpoint observed with matching request IDs and host RX evidence.
+- [x] Route left/right mouse actions through the existing Minecraft mouse callback and add M9 target diagnostics for block interactions.
+- [ ] Runtime-verify an actual forwarded left-click breaks a targeted block.
+- [ ] Runtime-verify an actual forwarded right-click places/interacts with a targeted block.
+- [ ] Validate collision behavior around bridge-controlled block interaction before marking M9 complete.
+
+**M9 targeting evidence:** Runtime session `920882437` produced continuous `M9_RAYCAST_TX` and `M9_RAYCAST_RESPONSE_RECEIVED` traffic. Guest response checkpoint: request `232`, guest sequence `103`; host response checkpoint: count `30`, request `232`, `hit=False`, distance `6.000`. The host-side parser was separately isolated with `M9Probe2` and accepted a synthetic `RAYCAST_RESPONSE` (`request=77`, `hit=True`).
 
 ### Milestone 8 — Camera Synchronization ✅ Complete
 - [x] Sample the active Minecraft camera entity on the client thread.

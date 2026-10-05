@@ -84,10 +84,12 @@ public final class GuestInputBridge {
                 case 4:
                     mouseButton.invoke(client.mouse, window, (int) input.keyCode, PRESS, 0);
                     heldMouseButtons.add((int) input.keyCode);
+                    logM9BlockInteraction(client, (int) input.keyCode, true);
                     break;
                 case 5:
                     mouseButton.invoke(client.mouse, window, (int) input.keyCode, RELEASE, 0);
                     heldMouseButtons.remove((int) input.keyCode);
+                    logM9BlockInteraction(client, (int) input.keyCode, false);
                     break;
                 case 6:
                     mouseScroll.invoke(client.mouse, window, 0.0D, (double) input.wheelDelta);
@@ -97,6 +99,21 @@ public final class GuestInputBridge {
             }
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Failed to apply forwarded mouse input", e);
+        }
+    }
+
+    private void logM9BlockInteraction(MinecraftClient client, int button, boolean pressed) {
+        if ((button != 0 && button != 1) || client.crosshairTarget == null) return;
+        String actionButton = button == 0 ? "LEFT" : "RIGHT";
+        if (client.crosshairTarget.getType() == net.minecraft.util.hit.HitResult.Type.BLOCK) {
+            net.minecraft.util.hit.BlockHitResult hit = (net.minecraft.util.hit.BlockHitResult) client.crosshairTarget;
+            net.minecraft.util.math.BlockPos pos = hit.getBlockPos();
+            String blockId = client.world == null ? "" : net.minecraft.registry.Registries.BLOCK
+                    .getId(client.world.getBlockState(pos).getBlock()).toString();
+            LOGGER.info("M9_BLOCK_INTERACTION button={} action={} block={} pos={} side={} thread={}",
+                    actionButton, pressed ? "PRESS" : "RELEASE", blockId, pos, hit.getSide().getId(), Thread.currentThread().getName());
+        } else if (pressed) {
+            LOGGER.info("M9_BLOCK_INTERACTION button={} action=PRESS target=MISS thread={}", actionButton, Thread.currentThread().getName());
         }
     }
 

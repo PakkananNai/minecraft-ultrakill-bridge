@@ -48,6 +48,7 @@ namespace MinecraftBridge.Protocol
 
         public event Action<ControlSession> SessionEstablished;
         public event Action<ControlSession, CameraStateMessage> CameraStateReceived;
+        public event Action<ControlSession, RaycastResponseMessage> RaycastResponseReceived;
         public event Action<uint> SessionClosed;
 
         public TcpControlServer(IPAddress address, int port, Action<string> log = null, int ioTimeoutMilliseconds = 15000)
@@ -171,6 +172,10 @@ namespace MinecraftBridge.Protocol
                         case MessageType.CameraState:
                             CameraStateMessage camera = ReadCameraState(frame.Payload);
                             CameraStateReceived?.Invoke(controlSession, camera);
+                            break;
+                        case MessageType.RaycastResponse:
+                            RaycastResponseMessage raycast = ReadRaycastResponse(frame.Payload);
+                            RaycastResponseReceived?.Invoke(controlSession, raycast);
                             break;
                         case MessageType.Shutdown:
                             ReadShutdown(frame.Payload);
@@ -306,6 +311,16 @@ namespace MinecraftBridge.Protocol
                 CameraStateMessage camera = CameraStateMessage.Deserialize(reader);
                 RequirePayloadEnd(reader);
                 return camera;
+            }
+        }
+
+        internal static RaycastResponseMessage ReadRaycastResponse(byte[] payload)
+        {
+            using (PacketReader reader = new PacketReader(payload))
+            {
+                RaycastResponseMessage response = RaycastResponseMessage.Deserialize(reader);
+                RequirePayloadEnd(reader);
+                return response;
             }
         }
 

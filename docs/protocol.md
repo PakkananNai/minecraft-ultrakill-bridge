@@ -137,11 +137,28 @@ Direction is guest-to-host. The guest samples its active camera entity every thr
 * `HasFocus` (`uint8`): `1 = Focused`, `0 = Unfocused`.
 * `ReleaseHeldKeys` (`uint8`): `1 = Force clear all held buttons/keys immediately`.
 
-### 4.9 ERROR (`Type = 99`)
+### 4.9 RAYCAST_REQUEST (`Type = 12`)
+* `RequestId` (`uint64`): Monotonically increasing request identifier scoped to the control session.
+* `MaxDistance` (`float32`): Requested ray length in blocks; guest clamps accepted requests to `0 < distance <= 64`.
+
+Direction is host-to-guest. The guest uses its active Minecraft camera entity as the ray origin and direction, performs the query on the Minecraft client thread, and returns the result with the same request ID.
+
+### 4.10 RAYCAST_RESPONSE (`Type = 13`)
+* `RequestId` (`uint64`): Request identifier echoed from `RAYCAST_REQUEST`.
+* `Hit` (`uint8`): `1` when a block was hit, otherwise `0`.
+* `BlockX`, `BlockY`, `BlockZ` (`int32`): Target block coordinates; zero when `Hit=0`.
+* `Side` (`uint8`): Minecraft `Direction` numeric ID for the hit face; zero when `Hit=0`.
+* `HitX`, `HitY`, `HitZ` (`float64`): World-space hit position.
+* `Distance` (`float32`): Distance from the Minecraft camera to the hit position.
+* `BlockId` (`string`): Registry identifier such as `minecraft:stone`; empty when `Hit=0`.
+
+The response is guest-to-host and is generated from Minecraft's real `ClientWorld.raycast` result. It is targeting information only; block breaking and placement remain separate interaction operations.
+
+### 4.11 ERROR (`Type = 99`)
 * `ErrorCode` (`uint32`): Numeric error code.
 * `ErrorMessage` (`string`): Human-readable error description.
 
-### 4.10 SHUTDOWN (`Type = 100`)
+### 4.12 SHUTDOWN (`Type = 100`)
 * `ReasonCode` (`uint32`): `0 = NORMAL`, `1 = CRASH`, `2 = RECONNECT`.
 * `ReasonText` (`string`): Optional descriptive text.
 

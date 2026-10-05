@@ -28,6 +28,7 @@ public class ProtocolTests {
         testCameraStateRoundTrip();
         testInputEventRoundTrip();
         testInputFocusRoundTrip();
+        testRaycastRoundTrip();
         testErrorAndShutdownRoundTrip();
         testTruncatedThrows();
         testStringBoundaryChecks();
@@ -252,6 +253,27 @@ public class ProtocolTests {
         } catch (Exception e) {
             assertTrue(false, "InputFocus threw unexpected exception: " + e.getMessage());
         }
+    }
+
+    private static void testRaycastRoundTrip() {
+        try {
+            Messages.RaycastRequestMessage request = new Messages.RaycastRequestMessage(77L, 6.0f);
+            PacketWriter writer = new PacketWriter(); request.serialize(writer);
+            Messages.RaycastRequestMessage decoded = Messages.RaycastRequestMessage.deserialize(new PacketReader(writer.toPayloadArray()));
+            assertTrue(decoded.getRequestId() == 77L, "Raycast request id matches");
+            assertTrue(Math.abs(decoded.getMaxDistance() - 6.0f) < 0.0001f, "Raycast max distance matches");
+
+            Messages.RaycastResponseMessage response = new Messages.RaycastResponseMessage(77L, true, 12, 73, 53, 1,
+                    12.25, 73.5, 53.0, 0.75f, "minecraft:stone");
+            PacketWriter responseWriter = new PacketWriter(); response.serialize(responseWriter);
+            Messages.RaycastResponseMessage decodedResponse = Messages.RaycastResponseMessage.deserialize(new PacketReader(responseWriter.toPayloadArray()));
+            assertTrue(decodedResponse.getRequestId() == 77L, "Raycast response id matches");
+            assertTrue(decodedResponse.isHit(), "Raycast hit flag matches");
+            assertTrue(decodedResponse.getBlockX() == 12 && decodedResponse.getBlockY() == 73 && decodedResponse.getBlockZ() == 53, "Raycast block position matches");
+            assertTrue(decodedResponse.getSide() == 1, "Raycast side matches");
+            assertTrue(Math.abs(decodedResponse.getHitX() - 12.25) < 0.0001 && Math.abs(decodedResponse.getDistance() - 0.75f) < 0.0001f, "Raycast hit geometry matches");
+            assertTrue(decodedResponse.getBlockId().equals("minecraft:stone"), "Raycast block id matches");
+        } catch (Exception e) { assertTrue(false, "Raycast messages threw unexpected exception: " + e.getMessage()); }
     }
 
     private static void testErrorAndShutdownRoundTrip() {

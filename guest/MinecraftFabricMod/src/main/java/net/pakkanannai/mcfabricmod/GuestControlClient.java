@@ -45,8 +45,21 @@ public final class GuestControlClient implements AutoCloseable {
     private int sequence;
     private int expectedReceiveSequence = 1;
     private GuestInputBridge inputBridge;
+    private GuestRaycastBridge raycastBridge;
 
     void setInputBridge(GuestInputBridge inputBridge) { this.inputBridge = inputBridge; }
+    void setRaycastBridge(GuestRaycastBridge raycastBridge) { this.raycastBridge = raycastBridge; }
+
+    void sendRaycastResponse(Messages.RaycastResponseMessage response) {
+        if (!isConnected()) return;
+        try {
+            writeMessage(socket, response);
+        } catch (IOException e) {
+            LOGGER.warn("M9_RAYCAST_TX_FAILED request={}", response.getRequestId(), e);
+            LOGGER.debug("Could not send raycast response", e);
+            closeSocket();
+        }
+    }
 
     void sendCameraState(double posX, double posY, double posZ, float yaw, float pitch, float roll, float fov, long sequenceNumber) {
         if (!isConnected()) return;
@@ -100,7 +113,13 @@ public final class GuestControlClient implements AutoCloseable {
                     MessageHeader header = readHeader(input);
                     requireReceiveSequence(header);
                     byte[] payload = readPayload(input, header.getPayloadLength());
-                    if (header.getType() == MessageType.INPUT_EVENT) {
+                    if (header.getType() == MessageType.RAYCAST_REQUEST) {
+                        PacketReader reader = new PacketReader(payload);
+                        Messages.RaycastRequestMessage request = Messages.RaycastRequestMessage.deserialize(reader);
+                        if (reader.getRemaining() != 0) throw new ProtocolException.ValidationException("Unexpected RAYCAST_REQUEST trailing bytes");
+                        GuestRaycastBridge bridge = raycastBridge;
+                        if (bridge != null) bridge.enqueue(request);
+                    } else if (header.getType() == MessageType.INPUT_EVENT) {
                         PacketReader reader = new PacketReader(payload);
                         Messages.InputEventMessage event = Messages.InputEventMessage.deserialize(reader);
                         if (reader.getRemaining() != 0) throw new ProtocolException.ValidationException("Unexpected INPUT_EVENT trailing bytes");
