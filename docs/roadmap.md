@@ -17,10 +17,10 @@ This roadmap tracks the development progress of the **Minecraft × ULTRAKILL Bri
 | **6** | **Host Rendering** | ✅ **Complete** | Live Minecraft 1.21.1 → shared framebuffer → Unity Texture2D/RawImage presentation verified under ULTRAKILL/Wine; repeated `M6_FRAME_PRESENTED` frames and an independently inspectable screenshot artifact were captured. |
 | **7** | **Input Integration** | ✅ **Complete** | Unity Input System capture, F8 focus switching, canonical input forwarding, client-thread guest application, and held-input release verified in the combined GUI runtime. |
 | **8** | **Camera Synchronization** | ✅ **Complete** | Guest camera sampling, canonical TCP synchronization, Minecraft→Unity coordinate/rotation mapping, scene-lifetime recovery, and live runtime application verified. |
-| **9** | **Block Interaction & Collision** | 🚧 **In Progress** | Canonical raycast request/response and Minecraft-authoritative targeting verified; break/place GUI evidence remains. |
-| **10** | **Entity Synchronization** | 📋 Planned | Lightweight entity metadata discovery and positioning. |
-| **11** | **Damage & Gameplay** | 📋 Planned | Bi-directional damage events and health synchronization. |
-| **12** | **Optimization & Stability** | 📋 Planned | Frame pacing, latency profiling, memory leak auditing, hardening. |
+| **9** | **Block Interaction & Collision** | ✅ **PASS** | Live raycast, block break/place interaction, and collision behavior verified. |
+| **10** | **Entity Synchronization** | ✅ **PASS** | Entity discovery, movement, spawn/remove, interaction, and reconnect snapshot verified. |
+| **11** | **Damage & Gameplay** | ✅ **PASS** | Damage hook, event transport, host consumption, and live Minecraft → host damage verification passed. |
+| **12** | **Optimization & Stability** | ✅ **PASS** | Framebuffer stress, TCP stability, allocation reduction, GPU fence hardening, live frame stability, reconnect, and lifecycle checks passed. |
 
 ---
 
@@ -134,3 +134,12 @@ The final combined Wayland runtime used session `2733717925` with the actual ULT
 - [x] Runtime-verify discovery, spawn/remove, movement updates, interactions, and reconnect snapshot in a loaded world.
 
 **M10 runtime evidence:** the existing `New World` save produced real `M10_ENTITY_UPDATE` discovery/movement traffic, `M10_ENTITY_REMOVE`, and `M10_ENTITY_INTERACTION` type 2. After restarting the ULTRAKILL host, the guest reconnected with a new session and emitted a fresh multi-entity `spawned=true` snapshot. See `docs/milestone10_report.md`.
+
+
+### Milestone 11 — Damage & Gameplay Integration ✅ PASS
+
+M11 was completed with live Minecraft damage-hook evidence, canonical TCP damage events, host consumption, health snapshots, and reconnect-safe guest control transport. See `docs/milestone11_report.md`.
+
+### Milestone 12 — Optimization & Stability ✅ PASS
+
+M12 automated and live gates passed. Host framebuffer payload reuse removed the per-frame allocation, guest PBO fence polling was hardened with `GL_SYNC_FLUSH_COMMANDS_BIT`, and fresh ULTRAKILL + Minecraft runtime evidence verified sustained frame presentation, reconnect/recovery, resource usage, and lifecycle stability. See `docs/milestone12_report.md`.

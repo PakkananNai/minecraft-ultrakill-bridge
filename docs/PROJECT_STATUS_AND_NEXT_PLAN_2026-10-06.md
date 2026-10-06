@@ -86,7 +86,7 @@ Minecraft interaction and client state changes must happen on the Minecraft clie
 | M9 — Block Interaction & Collision | **PASS** | Real runtime evidence verifies forwarded left-click breaking, held/release behavior, right-click `interactBlock()` success, and Minecraft-authoritative block/collision rules. No speculative cross-world collision system was added. |
 | M10 — Entity Synchronization | **PASS** | Entity discovery, movement, spawn/remove, interaction, and reconnect snapshot verified in the real `New World` runtime. |
 | M11 — Damage & Gameplay Integration | PASS | Damage event protocol, guest hook, host consumption, serialization, cross-language TCP validation, and live Minecraft → host → ULTRAKILL damage verification passed. |
-| M12 — Optimization & Stability | IN PROGRESS | Cross-process framebuffer stress, TCP protocol validation, test isolation, lifecycle checks, and runtime performance baseline are being hardened before the final live stability gate. |
+| M12 — Optimization & Stability | **PASS** | Automated stress/protocol gates plus fresh post-optimization live frame presentation, reconnect/recovery, CPU/RSS sampling, and restart checks passed. |
 
 ## 4. Existing evidence/documentation
 
