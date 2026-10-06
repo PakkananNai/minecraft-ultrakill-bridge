@@ -27,6 +27,7 @@ public final class MinecraftFramebufferCapture implements AutoCloseable {
     private static final int MAX_HEIGHT = SharedFramebuffer.HEIGHT;
     private static final int MAX_BYTES = SharedFramebuffer.SLOT_CAPACITY;
     private static final long NON_BLOCKING_WAIT_NS = 0L;
+    private static final int NON_BLOCKING_WAIT_FLAGS = GL32.GL_SYNC_FLUSH_COMMANDS_BIT;
 
     private final GuestControlClient controlClient;
     private final PboSlot[] slots = new PboSlot[PBO_COUNT];
@@ -141,7 +142,7 @@ public final class MinecraftFramebufferCapture implements AutoCloseable {
     private void pollCompletedReadbacks() {
         for (PboSlot pbo : slots) {
             if (pbo.state == PboState.GPU_PENDING) {
-                int result = GL32.glClientWaitSync(pbo.fence, 0, NON_BLOCKING_WAIT_NS);
+                int result = GL32.glClientWaitSync(pbo.fence, NON_BLOCKING_WAIT_FLAGS, NON_BLOCKING_WAIT_NS);
                 if (result == GL32.GL_ALREADY_SIGNALED || result == GL32.GL_CONDITION_SATISFIED) {
                     GL32.glDeleteSync(pbo.fence);
                     pbo.fence = 0L;
