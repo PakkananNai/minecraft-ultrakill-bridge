@@ -432,3 +432,25 @@ Verified runtime evidence:
 - Guest/host framebuffer identity and M8/M9 traffic continued after reconnect.
 
 M10 is therefore closed. M11 is now the active implementation target.
+
+
+## 15. Current state override — 2026-10-07
+
+This section supersedes stale planning text earlier in this handoff document that predates M10–M12 completion.
+
+- **M0–M12: PASS.**
+- The prompt-defined milestone roadmap ends at M12; there is no M13 in `prompt.md`.
+- M12 was closed in `docs/milestone12_report.md` after fresh post-optimization runtime evidence, including sustained M6 frame presentation, reconnect/recovery, resource sampling, and lifecycle checks.
+- Guest PBO fence polling now uses `GL_SYNC_FLUSH_COMMANDS_BIT`; host framebuffer payload storage is reused between frames.
+- The repository is ready for a separately approved post-M12 functional-expansion phase. Do not silently invent a new milestone or modify the agreed architecture without an explicit phase definition.
+- Existing untracked validation/POC artifacts remain untouched by design.
+
+### Post-M12 candidates (planning only)
+
+The long-term vision is broader than the prompt's twelve milestones. The next phase should be selected from actual remaining user-visible gaps, preferably in this order:
+
+1. Validate the existing input path for full Minecraft play controls (movement, hotbar, inventory, use/drop) in a fresh runtime.
+2. Decide and document whether ULTRAKILL-side world collision/movement synchronization is actually required; avoid building a second physics simulation unless measured gameplay requires it.
+3. Add only user-visible features that cannot already be achieved through Minecraft's authoritative client and the existing bridge.
+
+No implementation is started by this planning section alone.

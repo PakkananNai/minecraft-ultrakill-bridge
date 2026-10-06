@@ -77,10 +77,10 @@ The full message set, payload layouts, and validation rules are defined in `docs
 | **M8 — Camera Synchronization** | ✅ Complete | Minecraft camera state is sampled, sent through canonical MCUB TCP, transformed into Unity coordinates/rotation, applied on the Unity main thread, and verified in the live Wayland runtime. |
 | **M9 — Block Interaction & Collision** | ✅ Complete | Raycast targeting, block breaking, block placement, mouse-button forwarding, and Minecraft-authoritative collision experiments were verified in the live runtime. |
 | **M10 — Entity Synchronization** | ✅ Complete | Lightweight discovery, metadata, position/rotation/velocity updates, spawn/remove, attack interaction events, and reconnect snapshots were verified in the real `New World` runtime. |
-| **M11 — Damage & Gameplay Integration** | ⏳ Not started | Next: damage events, health synchronization, attack interactions, and relevant gameplay state. |
-| **M12 — Optimization & Stability** | ⏳ Not started | Planned: latency, rendering efficiency, memory/resource lifecycle, error recovery, and cross-platform validation. |
+| **M11 — Damage & Gameplay Integration** | ✅ Complete | Damage events, health synchronization, attack interaction hooks, and live host consumption verified. |
+| **M12 — Optimization & Stability** | ✅ Complete | Stress/protocol gates, framebuffer allocation reduction, PBO fence hardening, live stability/reconnect, CPU/RSS, and lifecycle checks verified. |
 
-**Latest milestone:** M10 is complete and fully runtime-verified. M11 is the next implementation target.
+**Latest milestone:** M12 is complete and fully runtime-verified. The prompt-defined milestone roadmap is complete; future work should be defined as a new approved phase rather than silently extending the milestone list.
 
 **Repository integrity:** The omitted host protocol sources were restored in commit `08535a2`; CI passed.
 
