@@ -53,8 +53,9 @@ PASS:
 - Host optimization build succeeds with Wine Mono `mcs`.
 - Guest Gradle test suite succeeds.
 - TCP protocol validation succeeds with canonical 16-byte header, cross-language fixtures, malformed/fragmented/coalesced cases, lifecycle, and cleanup.
+- 10,000-frame cross-process shared-memory stress passes in both C#→Java and Java→C# directions.
 - `git diff --check` succeeds.
-- Optimized host DLL was deployed to the ULTRAKILL BepInEx plugin directory and hashes match the build artifact.
+- Optimized host DLL builds successfully; deployment is required before the next live runtime start.
 
 ## Live evidence already observed
 

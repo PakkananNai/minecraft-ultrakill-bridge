@@ -237,7 +237,7 @@ namespace MinecraftBridge.Framebuffer
             {
                 metadata = GetMetadata(slot);
                 payloadLength = checked((int)metadata.PayloadLength);
-                if (payload == null || payload.Length < payloadLength)
+                if (payload == null || payload.Length != payloadLength)
                     payload = new byte[payloadLength];
                 long o = SlotOffset(slot);
                 CopyFromMapping(o + SlotHeaderSize, payload, payloadLength);
