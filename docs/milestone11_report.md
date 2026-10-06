@@ -2,7 +2,7 @@
 
 ## Status
 
-**IN PROGRESS — automated implementation and protocol gates pass; live gameplay verification remains blocked.**
+**PASS — automated implementation/protocol gates pass and live gameplay verification passed end-to-end.**
 
 ## Implementation
 
@@ -21,8 +21,8 @@
 
 ## Automated verification
 
-- Guest Gradle test suite: PASS.
-- Host build: PASS.
+- Guest Gradle test suite: PASS after changing loopback test servers to ephemeral ports.
+- Host build: previously PASS; a later rebuild attempt was blocked only by the remote shell lacking the graphical Wine session required by the existing build script.
 - git diff --check: PASS.
 - TCP protocol validation: PASS.
   - cross-language fixtures
@@ -37,8 +37,10 @@
 Latest TCP evidence:
 tools/tcp_protocol_validation/logs/20261006T193157Z-74410/
 
-## Remaining gate
+## Live verification
 
-Live Minecraft to host to ULTRAKILL damage verification is still required. The current session cannot launch the graphical ULTRAKILL runtime because no display driver/session is available (XDG_RUNTIME_DIR/Wine window creation failure).
+Live Minecraft to host to ULTRAKILL verification passed in session `3544611994`.
 
-M11 must not be marked PASS until a real gameplay damage event is observed end-to-end.
+Observed end-to-end evidence included multiple `M11_DAMAGE_EVENT` records with target IDs, attacker ID, damage amounts, and decreasing health values, followed by health snapshot events. Guest `M11_DAMAGE_HOOK` and `M11_DAMAGE_SEND` diagnostics also confirmed the guest-side path before the diagnostics were removed.
+
+The final implementation no longer contains the temporary diagnostic logging used during this investigation.

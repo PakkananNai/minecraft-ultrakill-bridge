@@ -28,7 +28,7 @@ final class ReconnectTestServer implements AutoCloseable {
     private volatile boolean sawShutdown;
 
     ReconnectTestServer() throws IOException {
-        server = new ServerSocket(47653);
+        server = new ServerSocket(0);
         thread = new Thread(this::serve, "Guest-ReconnectTestServer");
         thread.setDaemon(true);
         thread.start();
@@ -119,6 +119,7 @@ final class ReconnectTestServer implements AutoCloseable {
 
     int connectionCount() { return connectionCount; }
     boolean secondStreamSent() { return secondStreamSent; }
+    int port() { return server.getLocalPort(); }
     boolean sawPing() { return sawPing; }
     boolean sawShutdown() { return sawShutdown; }
     Throwable failure() { return failures.peek(); }

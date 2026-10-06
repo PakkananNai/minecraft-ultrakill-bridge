@@ -25,13 +25,14 @@ import org.slf4j.LoggerFactory;
 public final class GuestControlClient implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftBridge");
     private static final String HOST = "127.0.0.1";
-    private static final int PORT = 47653;
+    private static final int DEFAULT_PORT = 47653;
     private static final int CONNECT_TIMEOUT_MS = 1500;
     private static final long HEARTBEAT_INTERVAL_MS = 2000;
     private static final long HEARTBEAT_TIMEOUT_MS = 6000;
     private static final long INITIAL_RECONNECT_DELAY_MS = 500;
     private static final long MAX_RECONNECT_DELAY_MS = 5000;
 
+    private final int port;
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean stopping = new AtomicBoolean();
     private final Object outputLock = new Object();
@@ -46,6 +47,13 @@ public final class GuestControlClient implements AutoCloseable {
     private int expectedReceiveSequence = 1;
     private GuestInputBridge inputBridge;
     private GuestRaycastBridge raycastBridge;
+
+    public GuestControlClient() { this(DEFAULT_PORT); }
+
+    GuestControlClient(int port) {
+        if (port < 1 || port > 65535) throw new IllegalArgumentException("port");
+        this.port = port;
+    }
 
     void setInputBridge(GuestInputBridge inputBridge) { this.inputBridge = inputBridge; }
     void setRaycastBridge(GuestRaycastBridge raycastBridge) { this.raycastBridge = raycastBridge; }
@@ -125,7 +133,7 @@ public final class GuestControlClient implements AutoCloseable {
                 socket = connected;
                 synchronized (outputLock) { sequence = 0; }
                 expectedReceiveSequence = 1;
-                connected.connect(new InetSocketAddress(HOST, PORT), CONNECT_TIMEOUT_MS);
+                connected.connect(new InetSocketAddress(HOST, port), CONNECT_TIMEOUT_MS);
                 connected.setTcpNoDelay(true);
                 sendHello(connected);
                 DataInputStream input = new DataInputStream(connected.getInputStream());
@@ -142,7 +150,7 @@ public final class GuestControlClient implements AutoCloseable {
 
                 handshaken = true;
                 lastPongNanos = System.nanoTime();
-                LOGGER.info("Connected to bridge at {}:{} (session {})", HOST, PORT, ack.getSessionId());
+                LOGGER.info("Connected to bridge at {}:{} (session {})", HOST, port, ack.getSessionId());
                 ScheduledExecutorService sessionHeartbeat = Executors.newSingleThreadScheduledExecutor(
                         r -> daemon(r, "MinecraftBridge-Heartbeat"));
                 heartbeat = sessionHeartbeat;

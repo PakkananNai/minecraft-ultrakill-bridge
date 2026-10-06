@@ -34,7 +34,7 @@ class GuestControlClientTest {
 
     @Test void clientCompletesHandshakeHeartbeatAndGracefulDisconnect() throws Exception {
         try (TestServer server = new TestServer()) {
-            GuestControlClient client = new GuestControlClient();
+            GuestControlClient client = new GuestControlClient(server.port());
             client.start();
             Messages.HelloMessage hello = server.hello();
             assertNotNull(hello, "server received HELLO");
@@ -51,7 +51,7 @@ class GuestControlClientTest {
 
     @Test void reconnectsWithFreshSessionAndMappingAfterHostDisconnect() throws Exception {
         try (ReconnectTestServer server = new ReconnectTestServer()) {
-            GuestControlClient client = new GuestControlClient();
+            GuestControlClient client = new GuestControlClient(server.port());
             client.start();
             assertTrue(await(() -> server.connectionCount() == 2 && server.secondStreamSent()
                     && client.isConnected() && client.activeFramebufferSessionId() == 1002L, 8, TimeUnit.SECONDS),

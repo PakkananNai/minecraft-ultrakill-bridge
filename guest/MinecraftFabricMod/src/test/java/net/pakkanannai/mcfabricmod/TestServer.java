@@ -30,7 +30,7 @@ final class TestServer implements AutoCloseable {
     private int hostSequence = 1;
 
     TestServer() throws IOException {
-        server = new ServerSocket(47653);
+        server = new ServerSocket(0);
         thread = new Thread(this::serve, "Guest-TestServer");
         thread.setDaemon(true);
         thread.start();
@@ -88,6 +88,7 @@ final class TestServer implements AutoCloseable {
         while (hello == null && System.nanoTime() < deadline) Thread.sleep(10);
         return hello;
     }
+    int port() { return server.getLocalPort(); }
     boolean sawPing() { return sawPing; }
     boolean sawShutdown() { return sawShutdown; }
     Throwable failure() { return failures.peek(); }
