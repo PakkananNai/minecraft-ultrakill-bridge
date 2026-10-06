@@ -5,6 +5,7 @@
   "name": "Minecraft ULTRAKILL Bridge",
   "description": "Guest-side control connection for the Minecraft ULTRAKILL bridge.",
   "environment": "client",
+  "mixins": ["minecraft_ultrakill_bridge.mixins.json"],
   "entrypoints": {
     "client": ["net.pakkanannai.mcfabricmod.MinecraftBridgeMod"]
   },

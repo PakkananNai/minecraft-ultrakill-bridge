@@ -7,7 +7,7 @@ A bridge architecture allowing **Minecraft Java Edition** to run and behave as a
 ## High-Level Vision
 
 * **Host Game:** ULTRAKILL (Unity 2022.3.29f1 Mono x64 running through Wine 11.0 on Ubuntu 26.04 LTS).
-* **Guest Game:** Minecraft Java Edition 1.21.1 (Fabric Loader 0.16.5, Java 21).
+* **Guest Game:** Minecraft Java Edition 1.21.1 (Fabric Loader 0.19.3, Java 21).
 * **Core Philosophy:** Real Minecraft logic and world authority, rendered and presented through ULTRAKILL's host environment with synchronized camera, low-latency framebuffer transport, and seamless input routing.
 
 ---
@@ -75,8 +75,12 @@ The full message set, payload layouts, and validation rules are defined in `docs
 | **M6 — Unity Framebuffer Presentation** | ✅ Complete | Unity host presentation consumes the shared BGRA8 framebuffer and presents it through the ULTRAKILL runtime; live host/guest integration was verified. |
 | **M7 — Input Synchronization** | ✅ Complete | Unity Input System capture, F8 focus switching, keyboard/mouse/wheel forwarding, client-thread guest application, and held-input release were verified in the combined Wayland runtime. |
 | **M8 — Camera Synchronization** | ✅ Complete | Minecraft camera state is sampled, sent through canonical MCUB TCP, transformed into Unity coordinates/rotation, applied on the Unity main thread, and verified in the live Wayland runtime. |
+| **M9 — Block Interaction & Collision** | ✅ Complete | Raycast targeting, block breaking, block placement, mouse-button forwarding, and Minecraft-authoritative collision experiments were verified in the live runtime. |
+| **M10 — Entity Synchronization** | ⏳ Not started | Planned: lightweight entity discovery, metadata, position updates, spawn/remove events, and interaction events. |
+| **M11 — Damage & Gameplay Integration** | ⏳ Not started | Planned: damage events, health synchronization, attack interactions, and relevant gameplay state. |
+| **M12 — Optimization & Stability** | ⏳ Not started | Planned: latency, rendering efficiency, memory/resource lifecycle, error recovery, and cross-platform validation. |
 
-**Latest milestone:** M8 is complete. Runtime evidence is recorded in `docs/milestone8_report.md`.
+**Latest milestone:** M9 is complete. Runtime evidence is recorded in `docs/milestone9_report.md`.
 
 **Repository integrity:** The omitted host protocol sources were restored in commit `08535a2`; CI passed.
 
@@ -120,3 +124,4 @@ M3 validation: run `KEEP_LOGS=1 tools/tcp_protocol_validation/run.sh`. This suit
 * `docs/milestone3_architecture_analysis.md` — analysis of synchronization design candidates.
 * `docs/milestone7_report.md` — M7 input synchronization implementation and runtime evidence.
 * `docs/milestone8_report.md` — M8 camera synchronization implementation and runtime evidence.
+* `docs/milestone9_report.md` — M9 block interaction implementation and runtime evidence.

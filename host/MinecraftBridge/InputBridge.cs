@@ -16,6 +16,9 @@ namespace MinecraftBridge
         private bool _guestFocus;
         private bool _loggedInputBackend;
         private readonly bool[] _loggedEventTypes = new bool[7];
+        private bool _leftMouseDown;
+        private bool _rightMouseDown;
+        private bool _middleMouseDown;
 
         internal InputBridge(Action<string> log) { _log = log; }
 
@@ -66,12 +69,15 @@ namespace MinecraftBridge
             Vector2 delta = mouse.delta.ReadValue();
             if (delta.sqrMagnitude > 0.0001f)
                 Send(new InputEventMessage { EventType = 3, MouseDx = Mathf.RoundToInt(delta.x), MouseDy = Mathf.RoundToInt(delta.y) });
-            if (mouse.leftButton.wasPressedThisFrame) SendMouseButton(4, 0);
-            if (mouse.leftButton.wasReleasedThisFrame) SendMouseButton(5, 0);
-            if (mouse.rightButton.wasPressedThisFrame) SendMouseButton(4, 1);
-            if (mouse.rightButton.wasReleasedThisFrame) SendMouseButton(5, 1);
-            if (mouse.middleButton.wasPressedThisFrame) SendMouseButton(4, 2);
-            if (mouse.middleButton.wasReleasedThisFrame) SendMouseButton(5, 2);
+            bool leftMouseDown = mouse.leftButton.isPressed;
+            bool rightMouseDown = mouse.rightButton.isPressed;
+            bool middleMouseDown = mouse.middleButton.isPressed;
+            if (leftMouseDown != _leftMouseDown) SendMouseButton(leftMouseDown ? (byte)4 : (byte)5, 0);
+            if (rightMouseDown != _rightMouseDown) SendMouseButton(rightMouseDown ? (byte)4 : (byte)5, 1);
+            if (middleMouseDown != _middleMouseDown) SendMouseButton(middleMouseDown ? (byte)4 : (byte)5, 2);
+            _leftMouseDown = leftMouseDown;
+            _rightMouseDown = rightMouseDown;
+            _middleMouseDown = middleMouseDown;
             Vector2 scroll = mouse.scroll.ReadValue();
             if (Mathf.Abs(scroll.y) > 0.0001f)
             {
@@ -101,6 +107,12 @@ namespace MinecraftBridge
         {
             if (_guestFocus == focus && !releaseHeldKeys) return;
             _guestFocus = focus;
+            if (!focus)
+            {
+                _leftMouseDown = false;
+                _rightMouseDown = false;
+                _middleMouseDown = false;
+            }
             if (focus)
             {
                 _disabledActions.Clear();

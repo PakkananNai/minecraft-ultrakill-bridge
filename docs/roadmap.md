@@ -97,7 +97,7 @@ M5 runtime evidence: 267 live frames were observed at 1366x700 with final sequen
 The final combined Wayland runtime used session `2733717925` with the actual ULTRAKILL BepInEx host and Minecraft 1.21.1 Fabric guest. The guest validated the shared framebuffer identity and remained connected while M7 input was exercised. Host logs verified F8 focus acquisition, relative mouse movement, keyboard W down/up, left mouse down/up, and wheel transmission. Guest logs verified focus acquisition and application of relative mouse movement, W down/up, and left mouse down/up on the Minecraft render thread. Repeated F8 injection produced reversible host focus transitions including focus loss with held-input release. M7 is complete; see `docs/milestone7_report.md` for the evidence matrix.
 
 
-### Milestone 9 — Block Interaction & Collision 🚧 In Progress
+### Milestone 9 — Block Interaction & Collision ✅ PASS
 - [x] Define canonical `RAYCAST_REQUEST` (`Type = 12`) and `RAYCAST_RESPONSE` (`Type = 13`) payloads without changing the MCUB 16-byte header.
 - [x] Add C#/Java raycast message serialization/deserialization and 59/60 assertion protocol coverage.
 - [x] Add host raycast request scheduling and response handling on the existing control session.

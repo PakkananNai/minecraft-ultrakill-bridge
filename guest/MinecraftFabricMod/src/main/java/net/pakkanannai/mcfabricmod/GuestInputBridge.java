@@ -1,7 +1,8 @@
 package net.pakkanannai.mcfabricmod;
 
 import net.minecraft.client.MinecraftClient;
-import java.lang.reflect.Method;
+import net.minecraft.client.gui.screen.GameMenuScreen;
+import net.pakkanannai.mcfabricmod.mixin.MinecraftMouseAccessor;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -16,22 +17,10 @@ public final class GuestInputBridge {
     private final ConcurrentLinkedQueue<Object> queue = new ConcurrentLinkedQueue<>();
     private final Set<Integer> heldKeys = new HashSet<>();
     private final Set<Integer> heldMouseButtons = new HashSet<>();
-    private final Method mouseButton;
-    private final Method mouseScroll;
     private final boolean[] loggedEventTypes = new boolean[7];
     private volatile boolean guestFocus;
 
     public GuestInputBridge() {
-        try {
-            mouseButton = MinecraftClient.class.getDeclaredField("mouse").getType()
-                    .getDeclaredMethod("onMouseButton", long.class, int.class, int.class, int.class);
-            mouseButton.setAccessible(true);
-            mouseScroll = MinecraftClient.class.getDeclaredField("mouse").getType()
-                    .getDeclaredMethod("onMouseScroll", long.class, double.class, double.class);
-            mouseScroll.setAccessible(true);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Could not access Minecraft mouse callbacks", e);
-        }
     }
 
     public void enqueueInput(int eventType, long keyCode, int dx, int dy, int wheelDelta) {
@@ -53,6 +42,10 @@ public final class GuestInputBridge {
     private void applyFocus(MinecraftClient client, Focus focus) {
         guestFocus = focus.focus;
         LOGGER.info("M7_GUEST_INPUT_FOCUS focus={} releaseHeldKeys={} thread={}", focus.focus, focus.releaseHeldKeys, Thread.currentThread().getName());
+        if (focus.focus && client.currentScreen instanceof GameMenuScreen) {
+            client.setScreen(null);
+            LOGGER.info("M9_GAME_MENU_CLOSED_ON_FOCUS");
+        }
         if (focus.releaseHeldKeys) releaseAll(client);
     }
 
@@ -63,8 +56,7 @@ public final class GuestInputBridge {
             LOGGER.info("M7_GUEST_INPUT_APPLIED type={} key={} dx={} dy={} wheel={} thread={}", input.eventType, input.keyCode, input.dx, input.dy, input.wheelDelta, Thread.currentThread().getName());
         }
         long window = client.getWindow().getHandle();
-        try {
-            switch (input.eventType) {
+        switch (input.eventType) {
                 case 1:
                     client.keyboard.onKey(window, (int) input.keyCode, 0, PRESS, 0);
                     heldKeys.add((int) input.keyCode);
@@ -82,40 +74,21 @@ public final class GuestInputBridge {
                     }
                     break;
                 case 4:
-                    mouseButton.invoke(client.mouse, window, (int) input.keyCode, PRESS, 0);
+                    ((MinecraftMouseAccessor) client.mouse).minecraftBridge$onMouseButton(window, (int) input.keyCode, PRESS, 0);
                     heldMouseButtons.add((int) input.keyCode);
-                    logM9BlockInteraction(client, (int) input.keyCode, true);
                     break;
                 case 5:
-                    mouseButton.invoke(client.mouse, window, (int) input.keyCode, RELEASE, 0);
+                    ((MinecraftMouseAccessor) client.mouse).minecraftBridge$onMouseButton(window, (int) input.keyCode, RELEASE, 0);
                     heldMouseButtons.remove((int) input.keyCode);
-                    logM9BlockInteraction(client, (int) input.keyCode, false);
                     break;
                 case 6:
-                    mouseScroll.invoke(client.mouse, window, 0.0D, (double) input.wheelDelta);
+                    ((MinecraftMouseAccessor) client.mouse).minecraftBridge$onMouseScroll(window, 0.0D, (double) input.wheelDelta);
                     break;
                 default:
                     break;
             }
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Failed to apply forwarded mouse input", e);
-        }
     }
 
-    private void logM9BlockInteraction(MinecraftClient client, int button, boolean pressed) {
-        if ((button != 0 && button != 1) || client.crosshairTarget == null) return;
-        String actionButton = button == 0 ? "LEFT" : "RIGHT";
-        if (client.crosshairTarget.getType() == net.minecraft.util.hit.HitResult.Type.BLOCK) {
-            net.minecraft.util.hit.BlockHitResult hit = (net.minecraft.util.hit.BlockHitResult) client.crosshairTarget;
-            net.minecraft.util.math.BlockPos pos = hit.getBlockPos();
-            String blockId = client.world == null ? "" : net.minecraft.registry.Registries.BLOCK
-                    .getId(client.world.getBlockState(pos).getBlock()).toString();
-            LOGGER.info("M9_BLOCK_INTERACTION button={} action={} block={} pos={} side={} thread={}",
-                    actionButton, pressed ? "PRESS" : "RELEASE", blockId, pos, hit.getSide().getId(), Thread.currentThread().getName());
-        } else if (pressed) {
-            LOGGER.info("M9_BLOCK_INTERACTION button={} action=PRESS target=MISS thread={}", actionButton, Thread.currentThread().getName());
-        }
-    }
 
     private void releaseAll(MinecraftClient client) {
         long window = client.getWindow().getHandle();
@@ -124,8 +97,7 @@ public final class GuestInputBridge {
         }
         heldKeys.clear();
         for (Integer button : heldMouseButtons) {
-            try { mouseButton.invoke(client.mouse, window, button, RELEASE, 0); }
-            catch (ReflectiveOperationException e) { throw new IllegalStateException(e); }
+            ((MinecraftMouseAccessor) client.mouse).minecraftBridge$onMouseButton(window, button, RELEASE, 0);
         }
         heldMouseButtons.clear();
     }

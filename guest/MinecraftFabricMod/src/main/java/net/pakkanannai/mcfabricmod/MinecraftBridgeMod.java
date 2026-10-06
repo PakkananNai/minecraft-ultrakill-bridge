@@ -25,10 +25,11 @@ public final class MinecraftBridgeMod implements ClientModInitializer {
         raycastBridge.setControlClient(controlClient);
         controlClient.setInputBridge(inputBridge);
         controlClient.setRaycastBridge(raycastBridge);
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> client.options.pauseOnLostFocus = false);
         controlClient.start();
         HudRenderCallback.EVENT.register((drawContext, tickCounter) ->
                 framebufferCapture.capture(MinecraftClient.getInstance()));
-        ClientTickEvents.END_CLIENT_TICK.register(client -> inputBridge.tick(client));
+        ClientTickEvents.START_CLIENT_TICK.register(client -> inputBridge.tick(client));
         ClientTickEvents.END_CLIENT_TICK.register(client -> raycastBridge.tick(client));
         ClientTickEvents.END_CLIENT_TICK.register(this::sendCameraState);
         if (Boolean.getBoolean("minecraft.ultrakill.bridge.captureWithoutWorld")) {
