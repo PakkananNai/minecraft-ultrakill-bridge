@@ -227,6 +227,30 @@ namespace MinecraftBridge.Framebuffer
             }
         }
 
+        public bool TryReadLatestFrame(out FrameMetadata metadata, ref byte[] payload, out int payloadLength)
+        {
+            metadata = null;
+            payloadLength = 0;
+            int slot = TryAcquireLatestReady(out ulong sequence);
+            if (slot < 0) return false;
+            try
+            {
+                metadata = GetMetadata(slot);
+                payloadLength = checked((int)metadata.PayloadLength);
+                if (payload == null || payload.Length < payloadLength)
+                    payload = new byte[payloadLength];
+                long o = SlotOffset(slot);
+                CopyFromMapping(o + SlotHeaderSize, payload, payloadLength);
+                if (metadata.Sequence != sequence)
+                    throw new InvalidDataException("Frame sequence changed while reading");
+                return true;
+            }
+            finally
+            {
+                ReleaseReading(slot);
+            }
+        }
+
         private void Initialize(uint sessionId, ulong generationHi, ulong generationLo)
         {
             WriteU32(0, Magic); WriteU16(4, Version); WriteU16(6, MappingHeaderSize); WriteU32(8, SlotCount);
@@ -312,7 +336,8 @@ namespace MinecraftBridge.Framebuffer
         private unsafe void WriteU16(long offset, ushort value) { *(ushort*)(basePointer + offset) = value; }
         private unsafe void WriteU64(long offset, ulong value) { *(ulong*)(basePointer + offset) = value; }
         private unsafe void CopyToMapping(long offset, byte[] data) { for (int i = 0; i < data.Length; i++) *(basePointer + offset + i) = data[i]; }
-        private unsafe void CopyFromMapping(long offset, byte[] data) { for (int i = 0; i < data.Length; i++) data[i] = *(basePointer + offset + i); }
+        private unsafe void CopyFromMapping(long offset, byte[] data) { CopyFromMapping(offset, data, data.Length); }
+        private unsafe void CopyFromMapping(long offset, byte[] data, int length) { for (int i = 0; i < length; i++) data[i] = *(basePointer + offset + i); }
 
         public sealed class FrameMetadata
         {

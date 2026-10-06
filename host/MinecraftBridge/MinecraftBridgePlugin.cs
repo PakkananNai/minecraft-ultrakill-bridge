@@ -35,6 +35,7 @@ namespace MinecraftBridge
         private int _lastRenderedWidth;
         private int _lastRenderedHeight;
         private int _renderedFrames;
+        private byte[] _renderPayload;
         private float _nextRenderLogTime;
         private bool _capturedM6Screenshot;
         private InputBridge _inputBridge;
@@ -237,13 +238,12 @@ namespace MinecraftBridge
             try
             {
                 SharedFramebuffer.FrameMetadata metadata;
-                byte[] payload;
-                if (!entry.Item1.TryReadLatestFrame(out metadata, out payload)) return;
+                if (!entry.Item1.TryReadLatestFrame(out metadata, ref _renderPayload, out _)) return;
 
                 lock (_renderGate)
                 {
                     EnsureMinecraftTexture(metadata.Width, metadata.Height);
-                    _minecraftTexture.LoadRawTextureData(payload);
+                    _minecraftTexture.LoadRawTextureData(_renderPayload);
                     _minecraftTexture.Apply(false, false);
                     _minecraftRawImage.texture = _minecraftTexture;
                     _lastRenderedSequence = metadata.Sequence;
@@ -263,7 +263,7 @@ namespace MinecraftBridge
                 {
                     Log.LogInfo("M6_FRAME_PRESENTED sequence=" + _lastRenderedSequence
                         + " size=" + _lastRenderedWidth + "x" + _lastRenderedHeight
-                        + " bytes=" + payload.Length + " rendered=" + _renderedFrames);
+                        + " bytes=" + metadata.PayloadLength + " rendered=" + _renderedFrames);
                     _nextRenderLogTime = Time.unscaledTime + 1f;
                 }
             }

@@ -47,14 +47,27 @@ Guest Gradle tests pass after test-only loopback servers were changed from fixed
 
 No speculative frame-rate limiter, custom allocator, profiler framework, or alternate rendering path was added. The current implementation already uses latest-frame selection, asynchronous PBO readback, bounded PBO count, and explicit shared-buffer ownership. Further optimization should be driven by live measurements rather than guessed bottlenecks.
 
+## Current automated gate
+
+PASS:
+- Host optimization build succeeds with Wine Mono `mcs`.
+- Guest Gradle test suite succeeds.
+- TCP protocol validation succeeds with canonical 16-byte header, cross-language fixtures, malformed/fragmented/coalesced cases, lifecycle, and cleanup.
+- `git diff --check` succeeds.
+- Optimized host DLL was deployed to the ULTRAKILL BepInEx plugin directory and hashes match the build artifact.
+
+## Live evidence already observed
+
+The pre-optimization runtime remained stable long enough to present frames and exchange camera/entity/damage traffic. A heartbeat timeout at `03:29:48` was followed by successful guest reconnect and shared-framebuffer identity validation at `03:29:49`. No `M6_FRAME_PRESENT_FAILED` or exception was present in the recent host log. This establishes recovery behavior, but it is not sufficient to close M12 because the optimized DLL has not yet been exercised in a fresh runtime.
+
 ## Remaining M12 gate
 
-Run the actual Minecraft 1.21.1 + ULTRAKILL runtime and collect:
+Restart ULTRAKILL so BepInEx loads the newly deployed optimized DLL, then run Minecraft + ULTRAKILL long enough to verify:
 
-1. sustained frame presentation/capture evidence;
-2. reconnect/recovery evidence;
-3. process memory/CPU baseline during bridge activity;
-4. absence of repeated capture/presentation/lifecycle errors;
-5. clean shutdown and restart.
+1. sustained frame presentation/capture;
+2. reconnect/recovery;
+3. CPU/RSS baseline during bridge activity;
+4. no repeated capture/presentation/lifecycle errors;
+5. clean shutdown/restart.
 
-M12 must not be marked PASS until these live stability checks are observed.
+M12 must not be marked PASS until these post-optimization live checks are observed.
