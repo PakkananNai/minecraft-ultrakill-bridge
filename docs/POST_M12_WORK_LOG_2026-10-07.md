@@ -1,8 +1,8 @@
 # Post-M12 Functional Expansion — Work Log
 
-**Project:** minecraft-ultrakill-bridge  
-**Date:** 2026-10-07  
-**Phase:** Post-M12 Functional Expansion (planning + behavior audit)  
+**Project:** minecraft-ultrakill-bridge
+**Date:** 2026-10-07
+**Phase:** Post-M12 Functional Expansion (planning + behavior audit)
 **Guiding method:** Ponytail — inspect first, reuse existing behavior, smallest useful change, no speculative abstractions.
 
 ## 1. Current baseline
@@ -126,8 +126,8 @@ After controls are proven, evaluate whether cross-world collision/movement synch
 
 ## 6. Current status
 
-**Phase status:** Planning + behavior audit started.  
-**Code changes this session:** None.  
+**Phase status:** Planning + behavior audit started.
+**Code changes this session:** None.
 **Reason:** Existing implementation must be behavior-tested before adding code.
 
 **Immediate next action:** complete the end-to-end Minecraft input audit in a fresh runtime, then implement only the first confirmed missing behavior.
@@ -178,9 +178,41 @@ Expected Wine headless GUI warnings appeared during the host build; they do not 
 
 ## 9. Current checkpoint
 
-**Status:** Input behavior audit completed at the implementation/protocol level; no production code defect demonstrated.  
-**Code changes:** none.  
-**Regression:** PASS.  
+**Status:** Input behavior audit completed at the implementation/protocol level; no production code defect demonstrated.
+**Code changes:** none.
+**Regression:** PASS.
 **Ponytail verdict:** keep the existing input path; do not add machinery without a demonstrated defect.
 
 **Next target:** audit the actual playable Minecraft interaction flow that sits immediately above input — inventory/hotbar/use/drop and block/entity interaction — and fix only a behavior that can be demonstrated as missing or incorrect.
+
+
+## 10. Completion-plan checkpoint — 2026-10-07
+
+Reviewed the full `prompt.md` roadmap and the current project handoff.
+
+Confirmed:
+
+- Official milestones M0–M12 are all PASS.
+- `prompt.md` intentionally ends at M12; no M13 should be invented.
+- The original project vision still requires a playable Minecraft experience integrated into ULTRAKILL, not merely a technically connected bridge.
+- The existing bridge architecture should remain the default foundation.
+
+Created:
+
+- `docs/POST_M12_COMPLETION_PLAN_2026-10-07.md`
+
+The completion plan defines the remaining work in this order:
+
+1. Prove the existing Minecraft play controls end-to-end.
+2. Close only real inventory/hotbar/use/drop/entity gameplay gaps.
+3. Decide and verify the minimum required cross-world movement/collision model.
+4. Confirm the final Minecraft presentation inside ULTRAKILL.
+5. Verify target-platform compatibility rather than assuming it.
+6. Measure performance and optimize only measured bottlenecks.
+7. Run final startup/focus/gameplay/disconnect/reconnect/shutdown stability checks.
+8. Update final documentation and release status.
+
+Ponytail constraint remains active: no new input framework, second physics engine, native graphics interop, dependency, or protocol message should be introduced unless an actual demonstrated requirement makes it necessary.
+
+**Current overall status:** M0–M12 officially PASS; Post-M12 completion work IN PROGRESS.
+**Immediate next action:** Phase A — fresh-runtime end-to-end control verification.
