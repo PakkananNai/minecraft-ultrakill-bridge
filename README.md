@@ -76,11 +76,11 @@ The full message set, payload layouts, and validation rules are defined in `docs
 | **M7 — Input Synchronization** | ✅ Complete | Unity Input System capture, F8 focus switching, keyboard/mouse/wheel forwarding, client-thread guest application, and held-input release were verified in the combined Wayland runtime. |
 | **M8 — Camera Synchronization** | ✅ Complete | Minecraft camera state is sampled, sent through canonical MCUB TCP, transformed into Unity coordinates/rotation, applied on the Unity main thread, and verified in the live Wayland runtime. |
 | **M9 — Block Interaction & Collision** | ✅ Complete | Raycast targeting, block breaking, block placement, mouse-button forwarding, and Minecraft-authoritative collision experiments were verified in the live runtime. |
-| **M10 — Entity Synchronization** | ⏳ Not started | Planned: lightweight entity discovery, metadata, position updates, spawn/remove events, and interaction events. |
-| **M11 — Damage & Gameplay Integration** | ⏳ Not started | Planned: damage events, health synchronization, attack interactions, and relevant gameplay state. |
+| **M10 — Entity Synchronization** | ✅ Complete | Lightweight discovery, metadata, position/rotation/velocity updates, spawn/remove, attack interaction events, and reconnect snapshots were verified in the real `New World` runtime. |
+| **M11 — Damage & Gameplay Integration** | ⏳ Not started | Next: damage events, health synchronization, attack interactions, and relevant gameplay state. |
 | **M12 — Optimization & Stability** | ⏳ Not started | Planned: latency, rendering efficiency, memory/resource lifecycle, error recovery, and cross-platform validation. |
 
-**Latest milestone:** M9 is complete. Runtime evidence is recorded in `docs/milestone9_report.md`.
+**Latest milestone:** M10 is complete and fully runtime-verified. M11 is the next implementation target.
 
 **Repository integrity:** The omitted host protocol sources were restored in commit `08535a2`; CI passed.
 
@@ -125,3 +125,4 @@ M3 validation: run `KEEP_LOGS=1 tools/tcp_protocol_validation/run.sh`. This suit
 * `docs/milestone7_report.md` — M7 input synchronization implementation and runtime evidence.
 * `docs/milestone8_report.md` — M8 camera synchronization implementation and runtime evidence.
 * `docs/milestone9_report.md` — M9 block interaction implementation and runtime evidence.
+* `docs/milestone10_report.md` — M10 entity synchronization implementation and verification status.

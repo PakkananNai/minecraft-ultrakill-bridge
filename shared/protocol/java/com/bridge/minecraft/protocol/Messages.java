@@ -448,6 +448,129 @@ public final class Messages {
         }
     }
 
+
+    public static class DamageEventMessage implements Message {
+        private int eventType;
+        private long targetId;
+        private long attackerId;
+        private float amount;
+        private float health;
+        private float maxHealth;
+        private String sourceType = "";
+
+        public DamageEventMessage() {}
+        public DamageEventMessage(int eventType, long targetId, long attackerId, float amount,
+                                  float health, float maxHealth, String sourceType) {
+            this.eventType = eventType; this.targetId = targetId; this.attackerId = attackerId;
+            this.amount = amount; this.health = health; this.maxHealth = maxHealth;
+            this.sourceType = sourceType;
+        }
+        @Override public MessageType getMessageType() { return MessageType.DAMAGE_EVENT; }
+        public int getEventType() { return eventType; }
+        public long getTargetId() { return targetId; }
+        public long getAttackerId() { return attackerId; }
+        public float getAmount() { return amount; }
+        public float getHealth() { return health; }
+        public float getMaxHealth() { return maxHealth; }
+        public String getSourceType() { return sourceType; }
+        @Override public void serialize(PacketWriter writer) {
+            writer.writeUInt8(eventType); writer.writeUInt32(targetId); writer.writeUInt32(attackerId);
+            writer.writeFloat(amount); writer.writeFloat(health); writer.writeFloat(maxHealth);
+            writer.writeString(sourceType);
+        }
+        public static DamageEventMessage deserialize(PacketReader reader) throws ProtocolException {
+            return new DamageEventMessage(reader.readUInt8(), reader.readUInt32(), reader.readUInt32(),
+                    reader.readFloat(), reader.readFloat(), reader.readFloat(), reader.readString());
+        }
+    }
+
+    public static class EntityUpdateMessage implements Message {
+        private long entityId;
+        private String entityType = "";
+        private double posX, posY, posZ;
+        private float yaw, pitch;
+        private float velocityX, velocityY, velocityZ;
+        private int flags;
+
+        public EntityUpdateMessage() {}
+        public EntityUpdateMessage(long entityId, String entityType, double posX, double posY, double posZ,
+                                   float yaw, float pitch, float velocityX, float velocityY, float velocityZ, int flags) {
+            this.entityId = entityId; this.entityType = entityType;
+            this.posX = posX; this.posY = posY; this.posZ = posZ;
+            this.yaw = yaw; this.pitch = pitch;
+            this.velocityX = velocityX; this.velocityY = velocityY; this.velocityZ = velocityZ;
+            this.flags = flags;
+        }
+
+        @Override public MessageType getMessageType() { return MessageType.ENTITY_UPDATE; }
+        public long getEntityId() { return entityId; }
+        public String getEntityType() { return entityType; }
+        public double getPosX() { return posX; }
+        public double getPosY() { return posY; }
+        public double getPosZ() { return posZ; }
+        public float getYaw() { return yaw; }
+        public float getPitch() { return pitch; }
+        public float getVelocityX() { return velocityX; }
+        public float getVelocityY() { return velocityY; }
+        public float getVelocityZ() { return velocityZ; }
+        public int getFlags() { return flags; }
+
+        @Override public void serialize(PacketWriter writer) {
+            writer.writeUInt32(entityId); writer.writeString(entityType);
+            writer.writeDouble(posX); writer.writeDouble(posY); writer.writeDouble(posZ);
+            writer.writeFloat(yaw); writer.writeFloat(pitch);
+            writer.writeFloat(velocityX); writer.writeFloat(velocityY); writer.writeFloat(velocityZ);
+            writer.writeUInt8(flags);
+        }
+
+        public static EntityUpdateMessage deserialize(PacketReader reader) throws ProtocolException {
+            return new EntityUpdateMessage(reader.readUInt32(), reader.readString(),
+                    reader.readDouble(), reader.readDouble(), reader.readDouble(),
+                    reader.readFloat(), reader.readFloat(),
+                    reader.readFloat(), reader.readFloat(), reader.readFloat(), reader.readUInt8());
+        }
+    }
+
+    public static class EntityRemoveMessage implements Message {
+        private long entityId;
+        public EntityRemoveMessage() {}
+        public EntityRemoveMessage(long entityId) { this.entityId = entityId; }
+        @Override public MessageType getMessageType() { return MessageType.ENTITY_REMOVE; }
+        public long getEntityId() { return entityId; }
+        @Override public void serialize(PacketWriter writer) { writer.writeUInt32(entityId); }
+        public static EntityRemoveMessage deserialize(PacketReader reader) throws ProtocolException {
+            return new EntityRemoveMessage(reader.readUInt32());
+        }
+    }
+
+    public static class EntityInteractionMessage implements Message {
+        private long entityId;
+        private int interactionType;
+        private int hand;
+        private double hitX, hitY, hitZ;
+
+        public EntityInteractionMessage() {}
+        public EntityInteractionMessage(long entityId, int interactionType, int hand, double hitX, double hitY, double hitZ) {
+            this.entityId = entityId; this.interactionType = interactionType; this.hand = hand;
+            this.hitX = hitX; this.hitY = hitY; this.hitZ = hitZ;
+        }
+        @Override public MessageType getMessageType() { return MessageType.ENTITY_INTERACTION; }
+        public long getEntityId() { return entityId; }
+        public int getInteractionType() { return interactionType; }
+        public int getHand() { return hand; }
+        public double getHitX() { return hitX; }
+        public double getHitY() { return hitY; }
+        public double getHitZ() { return hitZ; }
+        @Override public void serialize(PacketWriter writer) {
+            writer.writeUInt32(entityId); writer.writeUInt8(interactionType); writer.writeUInt8(hand);
+            writer.writeDouble(hitX); writer.writeDouble(hitY); writer.writeDouble(hitZ);
+        }
+        public static EntityInteractionMessage deserialize(PacketReader reader) throws ProtocolException {
+            return new EntityInteractionMessage(reader.readUInt32(), reader.readUInt8(), reader.readUInt8(),
+                    reader.readDouble(), reader.readDouble(), reader.readDouble());
+        }
+    }
+
     public static class ErrorMessage implements Message {
         private long errorCode;
         private String description = "";

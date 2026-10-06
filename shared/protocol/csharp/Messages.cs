@@ -356,6 +356,112 @@ namespace MinecraftBridge.Protocol
         }
     }
 
+
+    public sealed class DamageEventMessage : IMessage
+    {
+        public MessageType MessageType => MessageType.DamageEvent;
+        public byte EventType { get; set; } // 1=damage, 2=health update
+        public uint TargetId { get; set; }
+        public uint AttackerId { get; set; } // uint.MaxValue = no attacker
+        public float Amount { get; set; }
+        public float Health { get; set; }
+        public float MaxHealth { get; set; }
+        public string SourceType { get; set; } = string.Empty;
+
+        public void Serialize(PacketWriter writer)
+        {
+            writer.WriteUInt8(EventType); writer.WriteUInt32(TargetId); writer.WriteUInt32(AttackerId);
+            writer.WriteFloat(Amount); writer.WriteFloat(Health); writer.WriteFloat(MaxHealth);
+            writer.WriteString(SourceType);
+        }
+
+        public static DamageEventMessage Deserialize(PacketReader reader)
+        {
+            return new DamageEventMessage
+            {
+                EventType = reader.ReadUInt8(), TargetId = reader.ReadUInt32(), AttackerId = reader.ReadUInt32(),
+                Amount = reader.ReadFloat(), Health = reader.ReadFloat(), MaxHealth = reader.ReadFloat(),
+                SourceType = reader.ReadString()
+            };
+        }
+    }
+
+    public sealed class EntityUpdateMessage : IMessage
+    {
+        public MessageType MessageType => MessageType.EntityUpdate;
+        public uint EntityId { get; set; }
+        public string EntityType { get; set; } = string.Empty;
+        public double PosX { get; set; }
+        public double PosY { get; set; }
+        public double PosZ { get; set; }
+        public float Yaw { get; set; }
+        public float Pitch { get; set; }
+        public float VelocityX { get; set; }
+        public float VelocityY { get; set; }
+        public float VelocityZ { get; set; }
+        public byte Flags { get; set; }
+
+        public void Serialize(PacketWriter writer)
+        {
+            writer.WriteUInt32(EntityId);
+            writer.WriteString(EntityType);
+            writer.WriteDouble(PosX); writer.WriteDouble(PosY); writer.WriteDouble(PosZ);
+            writer.WriteFloat(Yaw); writer.WriteFloat(Pitch);
+            writer.WriteFloat(VelocityX); writer.WriteFloat(VelocityY); writer.WriteFloat(VelocityZ);
+            writer.WriteUInt8(Flags);
+        }
+
+        public static EntityUpdateMessage Deserialize(PacketReader reader)
+        {
+            return new EntityUpdateMessage
+            {
+                EntityId = reader.ReadUInt32(), EntityType = reader.ReadString(),
+                PosX = reader.ReadDouble(), PosY = reader.ReadDouble(), PosZ = reader.ReadDouble(),
+                Yaw = reader.ReadFloat(), Pitch = reader.ReadFloat(),
+                VelocityX = reader.ReadFloat(), VelocityY = reader.ReadFloat(), VelocityZ = reader.ReadFloat(),
+                Flags = reader.ReadUInt8()
+            };
+        }
+    }
+
+    public sealed class EntityRemoveMessage : IMessage
+    {
+        public MessageType MessageType => MessageType.EntityRemove;
+        public uint EntityId { get; set; }
+
+        public void Serialize(PacketWriter writer) { writer.WriteUInt32(EntityId); }
+        public static EntityRemoveMessage Deserialize(PacketReader reader)
+        {
+            return new EntityRemoveMessage { EntityId = reader.ReadUInt32() };
+        }
+    }
+
+    public sealed class EntityInteractionMessage : IMessage
+    {
+        public MessageType MessageType => MessageType.EntityInteraction;
+        public uint EntityId { get; set; }
+        public byte InteractionType { get; set; }
+        public byte Hand { get; set; }
+        public double HitX { get; set; }
+        public double HitY { get; set; }
+        public double HitZ { get; set; }
+
+        public void Serialize(PacketWriter writer)
+        {
+            writer.WriteUInt32(EntityId); writer.WriteUInt8(InteractionType); writer.WriteUInt8(Hand);
+            writer.WriteDouble(HitX); writer.WriteDouble(HitY); writer.WriteDouble(HitZ);
+        }
+
+        public static EntityInteractionMessage Deserialize(PacketReader reader)
+        {
+            return new EntityInteractionMessage
+            {
+                EntityId = reader.ReadUInt32(), InteractionType = reader.ReadUInt8(), Hand = reader.ReadUInt8(),
+                HitX = reader.ReadDouble(), HitY = reader.ReadDouble(), HitZ = reader.ReadDouble()
+            };
+        }
+    }
+
     public class ErrorMessage : IMessage
     {
         public MessageType MessageType => MessageType.Error;

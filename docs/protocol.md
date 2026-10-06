@@ -62,6 +62,7 @@ Every packet transmitted over the control channel consists of a fixed-size **16-
 | `14` | `ENTITY_UPDATE` | Entity discovery and position updates. |
 | `15` | `ENTITY_REMOVE` | Entity despawn / out of range. |
 | `16` | `DAMAGE_EVENT` | Combat and gameplay damage exchange. |
+| `17` | `ENTITY_INTERACTION` | Entity interact/attack event observed by the Minecraft client. |
 | `99` | `ERROR` | Protocol or application error notice. |
 | `100`| `SHUTDOWN` | Graceful disconnection notice. |
 
@@ -79,7 +80,7 @@ Strings are serialized as:
 Sent by the connecting party upon establishing control channel:
 * `ProtocolVersion` (`uint16`): Sender's expected protocol version (must match host).
 * `ClientName` (`string`): Human-readable identifier (e.g., `"MinecraftFabricMod"`).
-* `ClientVersion` (`string`): e.g., `"1.21.1-fabric-0.16.5"`.
+* `ClientVersion` (`string`): e.g., `"1.21.1-fabric-0.19.3"`.
 * `Capabilities` (`uint32`): Capability bitmask flags (e.g. `CAP_FRAME_STREAM = 0x01`, `CAP_INPUT = 0x02`, `CAP_CAMERA = 0x04`).
 
 ### 4.3 HELLO_ACK (`Type = 2`)
@@ -154,11 +155,52 @@ Direction is host-to-guest. The guest uses its active Minecraft camera entity as
 
 The response is guest-to-host and is generated from Minecraft's real `ClientWorld.raycast` result. It is targeting information only; block breaking and placement remain separate interaction operations.
 
-### 4.11 ERROR (`Type = 99`)
+### 4.11 ENTITY_UPDATE (`Type = 14`)
+Guest-to-host lightweight entity snapshot/update. Minecraft remains authoritative; the host stores metadata and does not recreate Minecraft entities in Unity in M10.
+
+* `EntityId` (`uint32`): Minecraft client entity ID.
+* `EntityType` (`string`): Registry identifier such as `minecraft:zombie`.
+* `PosX`, `PosY`, `PosZ` (`float64`): Minecraft world position.
+* `Yaw`, `Pitch` (`float32`): Entity orientation in degrees.
+* `VelocityX`, `VelocityY`, `VelocityZ` (`float32`): Entity velocity.
+* `Flags` (`uint8`): M10 state flags; bit `0` is on-ground.
+
+The guest discovers entities within 64 blocks of the local player, excludes the local player, sends newly visible entities immediately, and sends subsequent updates only when position/orientation/velocity/state changes exceed small thresholds. Reconnect forces a fresh visible-entity snapshot.
+
+### 4.12 ENTITY_REMOVE (`Type = 15`)
+* `EntityId` (`uint32`): Entity removed from the guest's tracked range/world.
+
+### 4.14 DAMAGE_EVENT (`Type = 16`)
+
+Payload:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `event_type` | `uint8` | `1` = damage event, `2` = health update |
+| `target_id` | `uint32` | Minecraft entity identifier |
+| `attacker_id` | `uint32` | Attacker entity identifier; `0xFFFFFFFF` when absent |
+| `amount` | `float32` | Damage amount; zero for health-only updates |
+| `health` | `float32` | Current health after the event/update |
+| `max_health` | `float32` | Maximum health |
+| `source_type` | string | Minecraft damage source name, or `health` for health-only updates |
+
+Minecraft remains authoritative. The guest emits successful damage events and health changes for tracked living entities; the host records the authoritative result without applying a second damage system.
+
+### 4.13 ENTITY_INTERACTION (`Type = 17`)
+Guest-to-host interaction event observed after Minecraft's normal entity interaction path.
+
+* `EntityId` (`uint32`): Target Minecraft entity ID.
+* `InteractionType` (`uint8`): `1 = INTERACT`, `2 = ATTACK`.
+* `Hand` (`uint8`): `0 = MAIN_HAND`, `1 = OFF_HAND`; attack events use `0`.
+* `HitX`, `HitY`, `HitZ` (`float64`): Interaction position; attack events use the entity position.
+
+The event is observational only in M10. It does not bypass or replace Minecraft's authoritative interaction logic.
+
+### 4.14 ERROR (`Type = 99`)
 * `ErrorCode` (`uint32`): Numeric error code.
 * `ErrorMessage` (`string`): Human-readable error description.
 
-### 4.12 SHUTDOWN (`Type = 100`)
+### 4.15 SHUTDOWN (`Type = 100`)
 * `ReasonCode` (`uint32`): `0 = NORMAL`, `1 = CRASH`, `2 = RECONNECT`.
 * `ReasonText` (`string`): Optional descriptive text.
 

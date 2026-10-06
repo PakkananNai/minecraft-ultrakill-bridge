@@ -4,13 +4,13 @@
   "version": "${version}",
   "name": "Minecraft ULTRAKILL Bridge",
   "description": "Guest-side control connection for the Minecraft ULTRAKILL bridge.",
-  "environment": "client",
+  "environment": "*",
   "mixins": ["minecraft_ultrakill_bridge.mixins.json"],
   "entrypoints": {
     "client": ["net.pakkanannai.mcfabricmod.MinecraftBridgeMod"]
   },
   "depends": {
-    "fabricloader": ">=0.16.5",
+    "fabricloader": ">=0.19.3",
     "minecraft": "1.21.1",
     "java": ">=21",
     "fabric-api": "*"

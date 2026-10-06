@@ -71,6 +71,46 @@ public final class GuestControlClient implements AutoCloseable {
         }
     }
 
+    void sendEntityUpdate(Messages.EntityUpdateMessage message) {
+        if (!isConnected()) return;
+        try {
+            writeMessage(socket, message);
+        } catch (IOException e) {
+            LOGGER.debug("Could not send entity update", e);
+            closeSocket();
+        }
+    }
+
+    void sendEntityRemove(long entityId) {
+        if (!isConnected()) return;
+        try {
+            writeMessage(socket, new Messages.EntityRemoveMessage(entityId));
+        } catch (IOException e) {
+            LOGGER.debug("Could not send entity removal", e);
+            closeSocket();
+        }
+    }
+
+    void sendDamageEvent(Messages.DamageEventMessage message) {
+        if (!isConnected()) return;
+        try {
+            writeMessage(socket, message);
+        } catch (IOException e) {
+            LOGGER.debug("Could not send damage event", e);
+            closeSocket();
+        }
+    }
+
+    void sendEntityInteraction(long entityId, int interactionType, int hand, double hitX, double hitY, double hitZ) {
+        if (!isConnected()) return;
+        try {
+            writeMessage(socket, new Messages.EntityInteractionMessage(entityId, interactionType, hand, hitX, hitY, hitZ));
+        } catch (IOException e) {
+            LOGGER.debug("Could not send entity interaction", e);
+            closeSocket();
+        }
+    }
+
     public void start() {
         if (!started.compareAndSet(false, true)) return;
         Thread thread = new Thread(this::connectionLoop, "MinecraftBridge-TCP");

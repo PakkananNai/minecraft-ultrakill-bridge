@@ -18,6 +18,7 @@ public enum MessageType {
     ENTITY_UPDATE(14),
     ENTITY_REMOVE(15),
     DAMAGE_EVENT(16),
+    ENTITY_INTERACTION(17),
     ERROR(99),
     SHUTDOWN(100);
 

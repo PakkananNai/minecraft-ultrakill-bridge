@@ -19,6 +19,7 @@ namespace MinecraftBridge.Protocol
         EntityUpdate = 14,
         EntityRemove = 15,
         DamageEvent = 16,
+        EntityInteraction = 17,
         Error = 99,
         Shutdown = 100
     }

@@ -105,9 +105,9 @@ The final combined Wayland runtime used session `2733717925` with the actual ULT
 - [x] Wire the guest raycast bridge to the live `GuestControlClient` transport.
 - [x] Runtime-verify live Minecraft 1.21.1 → ULTRAKILL/Wine raycast traffic; 30-response checkpoint observed with matching request IDs and host RX evidence.
 - [x] Route left/right mouse actions through the existing Minecraft mouse callback and add M9 target diagnostics for block interactions.
-- [ ] Runtime-verify an actual forwarded left-click breaks a targeted block.
-- [ ] Runtime-verify an actual forwarded right-click places/interacts with a targeted block.
-- [ ] Validate collision behavior around bridge-controlled block interaction before marking M9 complete.
+- [x] Runtime-verify an actual forwarded left-click breaks a targeted block.
+- [x] Runtime-verify an actual forwarded right-click places/interacts with a targeted block.
+- [x] Validate collision behavior around bridge-controlled block interaction before marking M9 complete.
 
 **M9 targeting evidence:** Runtime session `920882437` produced continuous `M9_RAYCAST_TX` and `M9_RAYCAST_RESPONSE_RECEIVED` traffic. Guest response checkpoint: request `232`, guest sequence `103`; host response checkpoint: count `30`, request `232`, `hit=False`, distance `6.000`. The host-side parser was separately isolated with `M9Probe2` and accepted a synthetic `RAYCAST_RESPONSE` (`request=77`, `hit=True`).
 
@@ -122,3 +122,15 @@ The final combined Wayland runtime used session `2733717925` with the actual ULT
 - [x] Verify live Minecraft 1.21.1 camera state through the ULTRAKILL/Wine runtime.
 
 **M8 evidence:** Final runtime session `1435401860` connected Minecraft 1.21.1 to the ULTRAKILL host and applied repeated camera states. Host evidence includes `M8_CAMERA_APPLIED` at counts 30, 60, and 90 with position `(12.50, 73.62, 53.50)`, Unity yaw `180`, pitch `0`, roll `0`, and FOV `70`. A scene-lifetime destruction bug was reproduced and fixed with `DontDestroyOnLoad` plus defensive recreation. See `docs/milestone8_report.md`.
+
+### Milestone 10 — Entity Synchronization ✅ PASS
+- [x] Add lightweight entity discovery around the local player.
+- [x] Add ENTITY_UPDATE metadata/position/rotation/velocity/state payloads.
+- [x] Add ENTITY_REMOVE tracking.
+- [x] Add observational ENTITY_INTERACTION type 17 for interact/attack events.
+- [x] Add host-side lightweight entity state storage without speculative Unity recreation.
+- [x] Add cross-language serialization tests.
+- [x] Build host and guest after implementation.
+- [x] Runtime-verify discovery, spawn/remove, movement updates, interactions, and reconnect snapshot in a loaded world.
+
+**M10 runtime evidence:** the existing `New World` save produced real `M10_ENTITY_UPDATE` discovery/movement traffic, `M10_ENTITY_REMOVE`, and `M10_ENTITY_INTERACTION` type 2. After restarting the ULTRAKILL host, the guest reconnected with a new session and emitted a fresh multi-entity `spawned=true` snapshot. See `docs/milestone10_report.md`.

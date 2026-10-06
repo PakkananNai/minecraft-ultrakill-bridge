@@ -49,6 +49,10 @@ namespace MinecraftBridge.Protocol
         public event Action<ControlSession> SessionEstablished;
         public event Action<ControlSession, CameraStateMessage> CameraStateReceived;
         public event Action<ControlSession, RaycastResponseMessage> RaycastResponseReceived;
+        public event Action<ControlSession, EntityUpdateMessage> EntityUpdateReceived;
+        public event Action<ControlSession, EntityRemoveMessage> EntityRemoveReceived;
+        public event Action<ControlSession, EntityInteractionMessage> EntityInteractionReceived;
+        public event Action<ControlSession, DamageEventMessage> DamageEventReceived;
         public event Action<uint> SessionClosed;
 
         public TcpControlServer(IPAddress address, int port, Action<string> log = null, int ioTimeoutMilliseconds = 15000)
@@ -177,6 +181,22 @@ namespace MinecraftBridge.Protocol
                             RaycastResponseMessage raycast = ReadRaycastResponse(frame.Payload);
                             RaycastResponseReceived?.Invoke(controlSession, raycast);
                             break;
+                        case MessageType.EntityUpdate:
+                            EntityUpdateMessage entityUpdate = ReadEntityUpdate(frame.Payload);
+                            EntityUpdateReceived?.Invoke(controlSession, entityUpdate);
+                            break;
+                        case MessageType.EntityRemove:
+                            EntityRemoveMessage entityRemove = ReadEntityRemove(frame.Payload);
+                            EntityRemoveReceived?.Invoke(controlSession, entityRemove);
+                            break;
+                        case MessageType.EntityInteraction:
+                            EntityInteractionMessage entityInteraction = ReadEntityInteraction(frame.Payload);
+                            EntityInteractionReceived?.Invoke(controlSession, entityInteraction);
+                            break;
+                        case MessageType.DamageEvent:
+                            DamageEventMessage damageEvent = ReadDamageEvent(frame.Payload);
+                            DamageEventReceived?.Invoke(controlSession, damageEvent);
+                            break;
                         case MessageType.Shutdown:
                             ReadShutdown(frame.Payload);
                             Log("MCUB_PEER_SHUTDOWN session=" + sessionId);
@@ -275,6 +295,7 @@ namespace MinecraftBridge.Protocol
                 case MessageType.FrameMetadata: case MessageType.CameraState: case MessageType.InputEvent:
                 case MessageType.InputFocus: case MessageType.RaycastRequest: case MessageType.RaycastResponse:
                 case MessageType.EntityUpdate: case MessageType.EntityRemove: case MessageType.DamageEvent:
+                case MessageType.EntityInteraction:
                 case MessageType.Error: case MessageType.Shutdown: return true;
                 default: return false;
             }
@@ -321,6 +342,46 @@ namespace MinecraftBridge.Protocol
                 RaycastResponseMessage response = RaycastResponseMessage.Deserialize(reader);
                 RequirePayloadEnd(reader);
                 return response;
+            }
+        }
+
+        internal static EntityUpdateMessage ReadEntityUpdate(byte[] payload)
+        {
+            using (PacketReader reader = new PacketReader(payload))
+            {
+                EntityUpdateMessage message = EntityUpdateMessage.Deserialize(reader);
+                RequirePayloadEnd(reader);
+                return message;
+            }
+        }
+
+        internal static EntityRemoveMessage ReadEntityRemove(byte[] payload)
+        {
+            using (PacketReader reader = new PacketReader(payload))
+            {
+                EntityRemoveMessage message = EntityRemoveMessage.Deserialize(reader);
+                RequirePayloadEnd(reader);
+                return message;
+            }
+        }
+
+        internal static DamageEventMessage ReadDamageEvent(byte[] payload)
+        {
+            using (PacketReader reader = new PacketReader(payload))
+            {
+                DamageEventMessage message = DamageEventMessage.Deserialize(reader);
+                RequirePayloadEnd(reader);
+                return message;
+            }
+        }
+
+        internal static EntityInteractionMessage ReadEntityInteraction(byte[] payload)
+        {
+            using (PacketReader reader = new PacketReader(payload))
+            {
+                EntityInteractionMessage message = EntityInteractionMessage.Deserialize(reader);
+                RequirePayloadEnd(reader);
+                return message;
             }
         }
 

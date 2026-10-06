@@ -84,7 +84,9 @@ Minecraft interaction and client state changes must happen on the Minecraft clie
 | M7 — Input Synchronization | PASS | Unity Input System capture, F8 focus switching, keyboard/mouse/wheel forwarding, client-thread application, and held-input release were verified in the combined runtime. |
 | M8 — Camera Synchronization | PASS | Minecraft camera state is sent through MCUB TCP, transformed to Unity coordinates/rotation, applied on Unity main thread, and runtime verified. |
 | M9 — Block Interaction & Collision | **PASS** | Real runtime evidence verifies forwarded left-click breaking, held/release behavior, right-click `interactBlock()` success, and Minecraft-authoritative block/collision rules. No speculative cross-world collision system was added. |
-| M10+ | NOT STARTED | Must not begin implementation until M9 passes, per AGENTS.md. |
+| M10 — Entity Synchronization | **PASS** | Entity discovery, movement, spawn/remove, interaction, and reconnect snapshot verified in the real `New World` runtime. |
+| M11 — Damage & Gameplay Integration | IN PROGRESS / AUTOMATED GATES PASS | Damage event protocol, guest hook, host consumption, serialization, cross-language TCP validation, and builds pass. Live gameplay verification remains blocked by the current headless graphical session. |
+| M12 — Optimization & Stability | NOT STARTED | Wait for M11 PASS. |
 
 ## 4. Existing evidence/documentation
 
@@ -98,6 +100,8 @@ Important project documents:
 - `docs/milestone5_report.md`
 - `docs/milestone7_report.md`
 - `docs/milestone8_report.md`
+- `docs/milestone9_report.md`
+- `docs/milestone10_report.md`
 - `docs/SESSION_HANDOFF_2026-10-05.md`
 
 The M6/M7/M8 runtime evidence is already recorded. M9 needs an equivalent evidence report after the runtime gate is actually passed.
@@ -408,8 +412,23 @@ The project should only move forward when all of the following are true:
 
 **Current overall state:**
 
-> **M0–M8: COMPLETE**
+> **M0–M9: COMPLETE**
 >
-> **M9: PASS / RUNTIME INTERACTION VERIFIED**
+> **M10: PASS / RUNTIME ENTITY SYNCHRONIZATION VERIFIED**
 >
-> **Next objective: close the M9 runtime input-evidence gap, then finish break/place/collision validation before starting M10.**
+> **M10: committed below as the entity/gameplay transport foundation; M11 is now in progress.**
+
+
+## 8. M10 completion status
+
+M10 is **PASS**. Guest discovery, entity messages, remove tracking, interaction mixins, host metadata storage, serialization tests, and live runtime gates are verified.
+
+Verified runtime evidence:
+- `M10_ENTITY_UPDATE` discovered real frogs, sheep, cows, chickens, pigs, glow squids, and items around the player.
+- Entity movement generated repeated position/state updates.
+- `M10_ENTITY_REMOVE` was observed for a tracked entity leaving the visible set.
+- `M10_ENTITY_INTERACTION` type `2` was observed from the normal Minecraft attack path.
+- After the ULTRAKILL host was restarted, the guest reconnected with a new session and emitted a fresh multi-entity `spawned=true` snapshot.
+- Guest/host framebuffer identity and M8/M9 traffic continued after reconnect.
+
+M10 is therefore closed. M11 is now the active implementation target.

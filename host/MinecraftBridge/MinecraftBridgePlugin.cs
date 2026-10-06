@@ -40,6 +40,7 @@ namespace MinecraftBridge
         private InputBridge _inputBridge;
         private CameraBridge _cameraBridge;
         private RaycastBridge _raycastBridge;
+        private EntityBridge _entityBridge;
         private readonly Dictionary<uint, Tuple<SharedFramebuffer, string, string>> _mappings = new Dictionary<uint, Tuple<SharedFramebuffer, string, string>>();
         private readonly Dictionary<uint, TcpControlServer.ControlSession> _sessions = new Dictionary<uint, TcpControlServer.ControlSession>();
         private ConfigEntry<string> _linuxSharedDirectory;
@@ -74,12 +75,17 @@ namespace MinecraftBridge
                 _controlServer.SessionEstablished += OnControlSessionEstablished;
                 _controlServer.CameraStateReceived += OnCameraStateReceived;
                 _controlServer.RaycastResponseReceived += OnRaycastResponseReceived;
+                _controlServer.EntityUpdateReceived += OnEntityUpdateReceived;
+                _controlServer.EntityRemoveReceived += OnEntityRemoveReceived;
+                _controlServer.EntityInteractionReceived += OnEntityInteractionReceived;
+                _controlServer.DamageEventReceived += OnDamageEventReceived;
                 _controlServer.SessionClosed += OnControlSessionClosed;
                 _controlServer.Start();
                 CreateMinecraftSurface();
                 _inputBridge = new InputBridge(message => Log.LogInfo(message));
                 _cameraBridge = new CameraBridge();
                 _raycastBridge = new RaycastBridge();
+                _entityBridge = new EntityBridge();
             }
             catch (System.Exception ex)
             {
@@ -87,6 +93,26 @@ namespace MinecraftBridge
                 _controlServer?.Dispose();
                 _controlServer = null;
             }
+        }
+
+        private void OnEntityUpdateReceived(TcpControlServer.ControlSession session, EntityUpdateMessage message)
+        {
+            _entityBridge?.OnUpdate(session, message);
+        }
+
+        private void OnEntityRemoveReceived(TcpControlServer.ControlSession session, EntityRemoveMessage message)
+        {
+            _entityBridge?.OnRemove(session, message);
+        }
+
+        private void OnEntityInteractionReceived(TcpControlServer.ControlSession session, EntityInteractionMessage message)
+        {
+            _entityBridge?.OnInteraction(session, message);
+        }
+
+        private void OnDamageEventReceived(TcpControlServer.ControlSession session, DamageEventMessage message)
+        {
+            _entityBridge?.OnDamage(session, message);
         }
 
         private void OnRaycastResponseReceived(TcpControlServer.ControlSession session, RaycastResponseMessage response)
@@ -118,6 +144,7 @@ namespace MinecraftBridge
                 }
                 _inputBridge?.SetSession(session);
                 _raycastBridge?.SetSession(session);
+                _entityBridge?.SetSession(session);
                 session.Send(new StartStreamMessage
                 {
                     SessionId = session.SessionId,
@@ -154,6 +181,7 @@ namespace MinecraftBridge
                 if (_sessions.TryGetValue(sessionId, out session)) _sessions.Remove(sessionId);
                 _inputBridge?.ClearSession(session);
                 _raycastBridge?.ClearSession(session);
+                _entityBridge?.ClearSession(session);
             }
             if (entry == null) return;
             try { entry.Item1.Dispose(); }
@@ -287,6 +315,8 @@ namespace MinecraftBridge
             _inputBridge = null;
             _cameraBridge?.Dispose();
             _cameraBridge = null;
+            _entityBridge?.Dispose();
+            _entityBridge = null;
             _controlServer?.Dispose();
             _controlServer = null;
             if (_minecraftTexture != null) { Destroy(_minecraftTexture); _minecraftTexture = null; }
